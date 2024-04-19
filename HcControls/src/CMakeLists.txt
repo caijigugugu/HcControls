@@ -68,7 +68,6 @@ if(QT_VERSION VERSION_GREATER_EQUAL "6.2")
 
         string(REGEX MATCH "HcPcrHelper|Constants" RESULT ${filepath})
         if (RESULT)
-            message("the singleton qml = " ${filepath})
             set_source_files_properties(${filepath} PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
         endif()
     endforeach()
