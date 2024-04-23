@@ -1,4 +1,5 @@
 #include <qdebug.h>
+#include <mutex>
 #include <QFile>
 #include <QQmlEngine>
 
@@ -10,8 +11,11 @@ HcFileOp::HcFileOp(QObject *parent) : QObject(parent)
 
 HcFileOp *HcFileOp::getInstance()
 {
-    static HcFileOp instance;
-    return &instance;
+    static std::once_flag of;
+    static HcFileOp* instance = nullptr;
+
+    std::call_once(of, [](){ instance = new HcFileOp(); });
+    return instance;
 }
 
 HcFileOp *HcFileOp::create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
