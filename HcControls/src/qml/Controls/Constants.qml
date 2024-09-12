@@ -4,6 +4,26 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 QtObject {
+    enum FaultLevel { Undefined = 0, Warn, Error, Fatal }
+    enum AlarmLevel{
+        Alarm_Tip = 0, //提示
+        Alarm_Warning, //警告
+        Alarm_Error, //限制故障
+        Alarm_Fatal, //停机级故障
+        Alarm_UnKnown //未知错误
+    }
+    enum AlarmHandleOption{
+        Handle_None = 0, //无操作 这时候界面仅显示确认按钮
+        Handle_Skip = 0x01, //跳过
+        Handle_Retry = 0x02, //重试
+        Handle_Stop = 0x04 //停止
+    }
+    enum DarkMode {
+        System = 0x0000,
+        Light = 0x0001,
+        Dark = 0x0002
+    }
+
     //使用桌面的窗口大小，只加载一次
     readonly property int width: Screen.width
     readonly property int height: Screen.height
@@ -17,13 +37,19 @@ QtObject {
     readonly property color globalBackground: "#f3f7fb"
 
     //组件主体背景色
-    readonly property color bodyBackground: "#ffffff"
+    readonly property color bodyBackground: "#FFFFFF"
 
     //组件主体背景深色
-    readonly property color bodyDeepBackground: "#353535"
+    readonly property color bodyDeepBackground: "#212B2D"
+
+    //组件标题框浅主题色
+    readonly property color titleBackground: "#19CFDB"
+
+    //组件标题框深主题色
+    readonly property color titleDeepBackground: "#33494D"
 
     //组件黑色边框
-    readonly property color backBorder: "#a0b9b9"
+    readonly property color backBorder: "#C4C4C4"
 
     //节点按钮颜色
     readonly property color unclickedButtonColor: "#ffffff"
