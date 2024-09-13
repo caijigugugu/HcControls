@@ -16,14 +16,14 @@ HcObject {
     property string promptIconSource: "../Icon/prompt.svg" //提示图标
     property string closeIconSource: "../Icon/close.svg" //关闭图标
     //图标可配置颜色，默认原始颜色
-    property string promptIconColor: ""
-    property string closeIconColor: ""
+    property string promptIconColor: "#09C9D7"
+    property string closeIconColor: "#FFFFFF"
     //提示文本
-    property string titleColor: Constants.fontColor
-    property int titleSize: 20
+    property string titleColor: "#FFFFFF"
+    property int titleSize: 18
     //详细信息文本
-    property int detailSize: 18
-    property string detailColor: Constants.fontColor
+    property int detailSize: 14
+    property string detailColor: "#FFFFFF"
     //提示图标大小
     property int promptIconWidth: 20
     property int promptIconHeight: 20
@@ -31,9 +31,10 @@ HcObject {
     property int closeIconWidth: 15
     property int closeIconHeight: 15
     property int radius: 4 //圆角
-    property string backgroundColor: Constants.bodyBackground //背景颜色
-    property string borderColor: Constants.backBorder //描边颜色
-    property int borderWidth: 0 //描边宽度
+    property string backgroundColor: "#353535" //背景颜色
+    property double backgroundOpacity: 0.8 //背景透明度
+    property string borderColor: "#16C1CE" //描边颜色
+    property int borderWidth: 1 //描边宽度
     id: cardDlg
 
     function showInfo(prompt = "",detailText = "",timeOut = 10000){
@@ -169,7 +170,10 @@ HcObject {
             id: popup
             width:  popupWidth
             height: _col.height
-            color: Constants.bodyBackground
+            color: Qt.rgba(Qt.color(cardDlg.backgroundColor).r,
+                   Qt.color(cardDlg.backgroundColor).g,
+                   Qt.color(cardDlg.backgroundColor).b,
+                   cardDlg.backgroundOpacity)
             radius: cardDlg.radius
             Column {
                 id: _col
@@ -181,7 +185,10 @@ HcObject {
                     width: parent.width
                     height: _title.height + 10
                     radius: cardDlg.radius
-                    color: cardDlg.backgroundColor
+                    color: Qt.rgba(Qt.color(cardDlg.backgroundColor).r,
+                                   Qt.color(cardDlg.backgroundColor).g,
+                                   Qt.color(cardDlg.backgroundColor).b,
+                                   cardDlg.backgroundOpacity)
                     Canvas {
                         id: borderCanvas
                         anchors.fill: parent
@@ -261,7 +268,10 @@ HcObject {
                     height: _detail.height
                     anchors.left: parent.left
                     radius: cardDlg.radius
-                    color: cardDlg.backgroundColor
+                    color: Qt.rgba(Qt.color(cardDlg.backgroundColor).r,
+                                   Qt.color(cardDlg.backgroundColor).g,
+                                   Qt.color(cardDlg.backgroundColor).b,
+                                   cardDlg.backgroundOpacity)
                     Canvas {
                         id: _borderCanvas
                         anchors.fill: parent
@@ -284,7 +294,6 @@ HcObject {
                         }
                         Component.onCompleted: _borderCanvas.requestPaint()
                     }
-
                     Label {
                         id: _detail
                         width: parent.width - 60
