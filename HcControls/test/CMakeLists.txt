@@ -3,18 +3,22 @@ cmake_minimum_required(VERSION 3.16)
 project(test VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.5)
 
+file(GLOB SRC_FILES *.cpp)
 qt_add_executable(test
-    main.cpp
+    ${SRC_FILES}
 )
-
+file(GLOB_RECURSE QML_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/*.qml")
 qt_add_qml_module(test
     URI test
     VERSION 1.0
-    QML_FILES Main.qml
+    QML_FILES ${QML_FILES}
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

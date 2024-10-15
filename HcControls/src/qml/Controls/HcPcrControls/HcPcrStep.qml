@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import HcControls
+import ".."
 
 Rectangle {
     property string name: "Step" + (indexOfStage + 1).toString()
@@ -247,7 +248,6 @@ Rectangle {
             }
         }
     }
-
     HcPopup {
         id: gradientPopup
         width: 600
@@ -394,6 +394,20 @@ Rectangle {
         verticalAlignment: Text.AlignVCenter
         color: "#DFDFDF"/*"white"*/
         font.pixelSize: 16
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+
+            onEntered: toolTip.visible = true
+            onExited: toolTip.visible = false
+        }
+
+        ToolTip {
+            id: toolTip
+            visible: false
+            text: control.name
+        }
     }
     // 功能按键
     IconButtons {
