@@ -43,11 +43,11 @@ Window {
                 ]
             })
             menuModel.append({
-                title: qsTr("输入框"),
+                title: qsTr("基本输入"),
                 icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/收起.png",
                 subMenus: [
-                    { "title": qsTr("输入框"), "icon": "", "qmlPath": "Page1.qml" },
-                    { "title": qsTr("其他"), "icon": "", "qmlPath": "Page1.qml" }
+                    { "title": qsTr("按钮"), "icon": "", "qmlPath": "HcButtonWindow.qml" },
+                    { "title": qsTr("输入框"), "icon": "", "qmlPath": "HcTextInputWindow.qml" }
                 ]
             })
             menuModel.append({
@@ -181,8 +181,9 @@ Window {
             Repeater {
                model: subMenus
                delegate: Rectangle{
-                   width: objColumn.width
+                   width: objColumn.width - 2*border.width
                    height: 40
+                   anchors.horizontalCenter: parent.horizontalCenter
                    property color normalColor: "#FFFFFF"
                    property color hoverColor: "#EBEBEB"
                    property color selectedColor: "#D8D8D8"
@@ -321,12 +322,14 @@ Window {
                 // }
             // }
         }
+        //右侧矩形框
         Rectangle {
             Layout.preferredWidth: parent.width - 230
             Layout.fillHeight: true
             Layout.margins: 20
             border.width: 1
             border.color: "#a0b9b9"
+            color: "#F3F3F3"
             StackLayout {
                 id: stackLayout
                 width: parent.width - 10
