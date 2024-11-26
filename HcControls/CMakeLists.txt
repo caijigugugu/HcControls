@@ -10,7 +10,6 @@ endif()
 
 set(HCCONTROLS_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 list(APPEND CMAKE_MODULE_PATH ${HCCONTROLS_DIRECTORY}/.cmake/)
-
 include(GetGitRevisionDescription)
 
 option(HCCONTROLS_BUILD_EXAMPLES "Build HcControls demo applications." OFF)
@@ -30,14 +29,14 @@ set(HCCONTROLS_QML_PLUGIN_DIRECTORY "" CACHE PATH "Path to HcControls plugin")
 if(NOT HCCONTROLS_QML_PLUGIN_DIRECTORY)
     set(HCCONTROLS_QML_PLUGIN_DIRECTORY ${QT_SDK_DIR}/qml/HcControls)
 endif()
-
-add_subdirectory(src)
+#包含组件库
+add_subdirectory(HcControls)
 
 #Release也支持日志打印代码位置
-#target_compile_definitions(hccontrolsplugin
-#    PRIVATE
-#    QT_MESSAGELOGCONTEXT
-#)
+target_compile_definitions(hccontrolsplugin
+   PRIVATE
+   QT_MESSAGELOGCONTEXT
+)
 
 if (HCCONTROLS_BUILD_EXAMPLES)
     add_subdirectory(example)
@@ -47,7 +46,7 @@ if (HCCONTROLS_BUILD_TEST)
     add_subdirectory(test)
 endif ()
 
-message("------------------------ HcControls ------------------------")
+message("----------------------- HcControls ------------------------")
 message("Build HcControls demo applications.: ${HCCONTROLS_BUILD_EXAMPLES}")
 message("Build HcControls demo applications.: ${HCCONTROLS_BUILD_TEST}")
 message("Build static library.: ${HCCONTROLS_BUILD_STATIC_LIB}")

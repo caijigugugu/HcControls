@@ -5,8 +5,9 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import HcControls
-import "./content"
+import "./window"
 Window {
+    id:app
     function recursePrint(obj) {
         for (var propertyName in obj) {
             if (obj[propertyName] !== null && typeof obj[propertyName] === 'object') {
@@ -25,41 +26,51 @@ Window {
 
     ListModel {
         id: menuModel
-        Component.onCompleted: {
-            menuModel.append({
-                title: qsTr("HcPcr"),
-                icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/收起.png",
-                //icon: "qrc:/HcControls/src/qml/Icon/btn_add.png",
-                subMenus: [
-                    { "title": qsTr("pcr"), "icon": "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/收起.png",
-                     "qmlPath": "HcPcrWindow.qml" }
-                ]
-            })
-            menuModel.append({
-                title: qsTr("弹窗"),
-                icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/收起.png",
-                subMenus: [
-                    { "title": qsTr("弹窗"), "icon": "", "qmlPath": "HcDialogWindow.qml" }
-                ]
-            })
-            menuModel.append({
-                title: qsTr("基本输入"),
-                icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/收起.png",
-                subMenus: [
-                    { "title": qsTr("按钮"), "icon": "", "qmlPath": "HcButtonWindow.qml" },
-                    { "title": qsTr("输入框"), "icon": "", "qmlPath": "HcTextInputWindow.qml" }
-                ]
-            })
-            menuModel.append({
-                title: qsTr("导航"),
-                icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/收起.png",
-                subMenus: [
-                    { "title": qsTr("表格"), "icon": "", "qmlPath": "HcTableViewWindow.qml" },
-                    { "title": qsTr("分页"), "icon": "", "qmlPath": "HcPaginationWindow.qml" }
-                ]
-            })
-        }
+        // 模型初始化
+    }
 
+    function updateModel() {
+        menuModel.clear(); // 清空模型
+        // 重新添加项
+        menuModel.append({
+            title: qsTr("温度程序"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("pcr"), "icon": "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png", "qmlPath": "./window/HcPcrWindow.qml" }
+            ]
+        });
+        menuModel.append({
+            title: qsTr("弹窗"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("弹窗"), "icon": "", "qmlPath": "./window/HcDialogWindow.qml" }
+            ]
+        });
+        menuModel.append({
+            title: qsTr("基本输入"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("按钮"), "icon": "", "qmlPath": "./window/HcButtonWindow.qml" },
+                { "title": qsTr("输入框"), "icon": "", "qmlPath": "./window/HcTextInputWindow.qml" }
+            ]
+        });
+        menuModel.append({
+            title: qsTr("导航"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("表格"), "icon": "", "qmlPath": "./window/HcTableViewWindow.qml" },
+                { "title": qsTr("分页"), "icon": "", "qmlPath": "./window/HcPaginationWindow.qml" },
+                { "title": qsTr("日历"), "icon": "", "qmlPath": "./window/HcCalendarWindow.qml" }
+            ]
+        });
+        menuModel.append({
+            title: qsTr("图表"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("图标"), "icon": "", "qmlPath": "./window/HcTabWindow.qml" },
+                { "title": qsTr("图表"), "icon": "", "qmlPath": "./window/HcChartWindow.qml" }
+            ]
+        });
     }
 
     FileDialog {
@@ -93,7 +104,6 @@ Window {
             }
         }
     }
-
     Component{
         id: menuButton
 
@@ -244,17 +254,17 @@ Window {
         spacing: 10
 
         Rectangle {
-            Layout.preferredWidth: 120
+            Layout.preferredWidth: 220
             Layout.fillHeight: true
             Layout.margins: 20
             border.width: 1
             border.color: "#a0b9b9"
-            Item{
+            Column{
                 anchors.fill: parent
                 Flickable{
                     id:scrollview
                     width: parent.width
-                    height: parent.height
+                    height: parent.height - _settingBtn.height
                     contentHeight: menuList.contentHeight
                     property string selectedIndex: ""
                     ListView{
@@ -268,33 +278,25 @@ Window {
                         }
                         model: menuModel
                         delegate: listDelegate
+                        spacing: 10
                     }
                     ScrollBar.vertical: ScrollBar {
                         policy: scrollview.contentHeight
                                 > scrollview.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
                     }
                 }
+                HcTextButton {
+                    id: _settingBtn
+                    height: 36
+                    width: parent.width - 2
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    font.pixelSize: 18
+                    text: qsTr("设置")
+                    onClicked: {
+                        _mainScreenLoader.setSource("./window/HcSettingWindow.qml")
+                    }
+                }
             }
-//             ComboBox {
-//                 id: comboBox
-//                 implicitWidth: 100
-//                 implicitHeight: 30
-//                 anchors.horizontalCenter: parent.horizontalCenter
-//                 anchors.top: parent.top
-//                 anchors.topMargin: 20
-//                 model: ["HcPcr"]
-//                 font.pixelSize: 14
-
-//                 onCurrentIndexChanged: {
-// //                    stackLayout.currentIndex = comboBox.currentIndex
-//                 }
-
-//                 Component.onCompleted: {
-// //                    console.log("implicit height = ", comboBox.implicitHeight)
-// //                    console.log("minimum height = ", comboBox.Layout.minimumHeight)
-//                 }
-//             }
-
             // Column {
             //     spacing: 20
             //     anchors.horizontalCenter: parent.horizontalCenter
@@ -345,8 +347,25 @@ Window {
             }
         }
     }
-
+    Connections{
+        target: TranslateHelper
+        function onCurrentChanged(){
+            SettingsHelper.saveLanguage(TranslateHelper.current)
+            TranslateHelper.setLang()
+            HcApp.setLang(Qt.locale(TranslateHelper.current))
+            updateModel();
+        }
+    }
+    Connections{
+        target: HcTheme
+        function onDarkModeChanged(){
+            SettingsHelper.saveDarkMode(HcTheme.darkMode)
+        }
+    }
     Component.onCompleted: {
-        console.log("Number.MAX_SAFE_INTEGER =", Number.MAX_SAFE_INTEGER)
+        updateModel();
+        HcApp.init(app,Qt.locale(TranslateHelper.current))
+        HcTheme.darkMode = SettingsHelper.getDarkMode()
+        HcTheme.animationEnabled = true
     }
 }

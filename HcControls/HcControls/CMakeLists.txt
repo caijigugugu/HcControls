@@ -26,6 +26,28 @@ else()
     set(CMAKE_AUTOUIC ON)
 endif()
 
+set(HcControls_QML_PLUGIN_DIRECTORY "" CACHE PATH "Path to HcControls plugin")
+if (NOT HcControls_QML_PLUGIN_DIRECTORY)
+    set(HcControls_QML_PLUGIN_DIRECTORY ${QT_SDK_DIR}/qml/HcControls)
+endif ()
+
+#国际化
+# find_program(QT_LUPDATE NAMES lupdate)
+# find_program(QT_LRELEASE NAMES lrelease)
+find_program(LUPDATE_EXECUTABLE lupdate)
+find_program(LRELEASE_EXECUTABLE lrelease)
+
+if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/hc_en_US.qm)
+    execute_process(COMMAND ${QT_LUPDATE} ${CMAKE_CURRENT_LIST_DIR} -ts hc_en_US.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+    execute_process(COMMAND ${QT_LRELEASE} hc_en_US.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+endif ()
+if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/hc_zh_CN.qm)
+    execute_process(COMMAND ${QT_LUPDATE} ${CMAKE_CURRENT_LIST_DIR} -ts hc_zh_CN.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+    execute_process(COMMAND ${QT_LRELEASE} hc_zh_CN.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+endif ()
+file(GLOB QM_FILE_PATHS ${CMAKE_CURRENT_LIST_DIR}/ *.qm)
+file(COPY ${QM_FILE_PATHS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/Qt${QT_VERSION_MAJOR}/imports/HcControls/i18n")
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp)
 
 #遍历所有Cpp文件
@@ -52,7 +74,7 @@ if(QT_VERSION VERSION_GREATER_EQUAL "6.2")
     endforeach(filepath)
 
     #遍历所有资源文件
-    file(GLOB_RECURSE RES_PATHS *.png *.jpg *.svg *.ico *.ttf *.webp *.js)
+    file(GLOB_RECURSE RES_PATHS *.png *.jpg *.svg *.ico *.ttf *.webp *.js *.qm)
     foreach(filepath ${RES_PATHS})
         #if(${filepath} MATCHES "Qt${QT_VERSION_MAJOR}/")
             string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" filename ${filepath})
@@ -62,7 +84,7 @@ if(QT_VERSION VERSION_GREATER_EQUAL "6.2")
 
     #修改资源文件导出路径
     foreach(filepath IN LISTS qml_files resource_files)
-        #string(REPLACE "Qt${QT_VERSION_MAJOR}/imports/HcControls/" "" filename ${filepath})
+        string(REPLACE "Qt${QT_VERSION_MAJOR}/imports/HcControls/" "" filename ${filepath})
         string(REPLACE "qml/" "" filename ${filepath})
         set_source_files_properties(${filepath} PROPERTIES QT_RESOURCE_ALIAS ${filename})
 
@@ -115,6 +137,7 @@ if(QT_VERSION VERSION_GREATER_EQUAL "6.2")
         RESOURCE_PREFIX "/qt/qml"
     )
 else()
+    qt_add_resources(QRC_RESOURCES Qt5/imports/hccontrols.qrc)
     #如果是Qt6.2版本以下，则使用add_qmlplugin函数添加资源文件，这是个自定义的函数，详情见.cmake/QmlPlugin.cmake
     include(QmlPlugin)
     add_qmlplugin(${PROJECT_NAME}
@@ -137,12 +160,15 @@ target_compile_definitions(${PROJECT_NAME}
 #去掉mingw生成的动态库libxxx前缀lib，不去掉前缀会导致 module "HcControls" plugin "HCCONTROLSplugin" not found
 if(MINGW)
     set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
+    #解决编译器报 too many sections的问题
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wa,-mbig-obj)
 endif()
 
 #MSVC Debug 添加后缀d，与Qt插件风格保持一致
 if(MSVC)
     set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 endif()
+
 
 #链接库
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -151,6 +177,39 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     Qt${QT_VERSION_MAJOR}::QmlPrivate
     Qt${QT_VERSION_MAJOR}::Svg
 )
+
+if(APPLE)
+    find_library(CARBON_LIBRARY Carbon)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${CARBON_LIBRARY})
+elseif(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE user32)
+elseif(UNIX)
+    if(QT_VERSION_MAJOR STREQUAL "6")
+        if(QT_VERSION VERSION_LESS "6.2.0")
+            message(FATAL_ERROR "Qt 6.2.0 or greater is required when using Qt6")
+        endif()
+    else()
+        if(QT_VERSION_MAJOR LESS "6")
+            find_package(Qt5 REQUIRED COMPONENTS X11Extras)
+            target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::X11Extras)
+        endif()
+    endif()
+    target_link_libraries(${PROJECT_NAME} PRIVATE X11)
+endif()
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/qmlcustomplot
+)
+
+if ((${QT_VERSION_MAJOR} LESS_EQUAL 6) AND (CMAKE_BUILD_TYPE MATCHES "Release"))
+    find_program(QML_PLUGIN_DUMP NAMES qmlplugindump)
+    add_custom_target(Script-Generate-QmlTypes
+            COMMAND ${QML_PLUGIN_DUMP} -nonrelocatable -noinstantiate HcControls 1.0 ${CMAKE_CURRENT_BINARY_DIR} > ${CMAKE_CURRENT_SOURCE_DIR}/Qt5/imports/HcControls/plugins.qmltypes
+            COMMENT "Generate qmltypes........."
+            SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Qt5/imports/HcControls/plugins.qmltypes
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
 #安装
 install(DIRECTORY ${HCCONTROLS_QML_PLUGIN_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX}/imports)
