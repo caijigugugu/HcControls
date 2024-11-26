@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import HcControls
-import "./content"
 Item {
     id:_hcDialogWindow
     Flickable {
