@@ -17,7 +17,7 @@ Window {
             }
         }
     }
-
+    color: HcTheme.dark ? "#575757" : "#F3F3F3"
     width: Screen.width
     height: Screen.height
     visible: true
@@ -43,7 +43,8 @@ Window {
             title: qsTr("弹窗"),
             icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
             subMenus: [
-                { "title": qsTr("弹窗"), "icon": "", "qmlPath": "./window/HcDialogWindow.qml" }
+                { "title": qsTr("弹窗"), "icon": "", "qmlPath": "./window/HcDialogWindow.qml" },
+                { "title": qsTr("菜单栏"), "icon": "", "qmlPath": "./window/HcMenuWindow.qml" }
             ]
         });
         menuModel.append({
@@ -51,7 +52,8 @@ Window {
             icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
             subMenus: [
                 { "title": qsTr("按钮"), "icon": "", "qmlPath": "./window/HcButtonWindow.qml" },
-                { "title": qsTr("输入框"), "icon": "", "qmlPath": "./window/HcTextInputWindow.qml" }
+                { "title": qsTr("输入框"), "icon": "", "qmlPath": "./window/HcTextInputWindow.qml" },
+                { "title": qsTr("选择器"), "icon": "", "qmlPath": "./window/HcPickerWindow.qml" }
             ]
         });
         menuModel.append({
@@ -59,8 +61,10 @@ Window {
             icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
             subMenus: [
                 { "title": qsTr("表格"), "icon": "", "qmlPath": "./window/HcTableViewWindow.qml" },
+                { "title": qsTr("树"), "icon": "", "qmlPath": "./window/HcTreeViewWindow.qml" },
                 { "title": qsTr("分页"), "icon": "", "qmlPath": "./window/HcPaginationWindow.qml" },
-                { "title": qsTr("日历"), "icon": "", "qmlPath": "./window/HcCalendarWindow.qml" }
+                { "title": qsTr("日历"), "icon": "", "qmlPath": "./window/HcCalendarWindow.qml" },
+                { "title": qsTr("翻转视图"), "icon": "", "qmlPath": "./window/HcFlipViewWindow.qml" }
             ]
         });
         menuModel.append({
@@ -68,42 +72,26 @@ Window {
             icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
             subMenus: [
                 { "title": qsTr("图标"), "icon": "", "qmlPath": "./window/HcTabWindow.qml" },
-                { "title": qsTr("图表"), "icon": "", "qmlPath": "./window/HcChartWindow.qml" }
+                { "title": qsTr("图表"), "icon": "", "qmlPath": "./window/HcChartWindow.qml" },
+                { "title": qsTr("进度条"), "icon": "", "qmlPath": "./window/HcProgressWindow.qml" }
+            ]
+        });
+        menuModel.append({
+            title: qsTr("框架结构"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("框架"), "icon": "", "qmlPath": "./window/HcFrameWindow.qml" }
+            ]
+        });
+        menuModel.append({
+            title: qsTr("其他"),
+            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            subMenus: [
+                { "title": qsTr("其他"), "icon": "", "qmlPath": "./window/HcExtraWindow.qml" }
             ]
         });
     }
 
-    FileDialog {
-        id: loadFileDlg
-        acceptLabel: qsTr("选择文件")
-        rejectLabel: qsTr("取消")
-        nameFilters: ["Json files (*.json)"]
-        fileMode: FileDialog.OpenFile
-
-        onAccepted: {
-            var file = loadFileDlg.currentFile
-
-            if (file) {
-                pcr.loadTemplate(file)
-            }
-        }
-    }
-
-    FileDialog {
-        id: saveFileDlg
-        acceptLabel: qsTr("选择文件")
-        rejectLabel: qsTr("取消")
-        nameFilters: ["Json files (*.json)"]
-        fileMode: FileDialog.SaveFile
-
-        onAccepted: {
-            var file = saveFileDlg.currentFile
-
-            if (file) {
-                pcr.saveTemplate(file)
-            }
-        }
-    }
     Component{
         id: menuButton
 
@@ -159,7 +147,7 @@ Window {
                     spacing: 10
                     anchors.fill: parent
                     anchors.margins: 10
-                    Label {
+                    HcText {
                         id: menuName
                         text: title
                         width: parent.width - _icon.width - rightMargin.width
@@ -194,9 +182,9 @@ Window {
                    width: objColumn.width - 2*border.width
                    height: 40
                    anchors.horizontalCenter: parent.horizontalCenter
-                   property color normalColor: "#FFFFFF"
-                   property color hoverColor: "#EBEBEB"
-                   property color selectedColor: "#D8D8D8"
+                   property color normalColor: HcTheme.dark ? "#575757" : "#FFFFFF"
+                   property color hoverColor: HcTheme.dark ? "#4f4d4d" : "#EBEBEB"
+                   property color selectedColor: HcTheme.dark ? "#373737" : "#D8D8D8"
                    // 子菜单的索引
                    property int subMenuIndex: index
                    // 通过拼接父菜单和子菜单的索引生成唯一的 globalIndex
@@ -220,7 +208,7 @@ Window {
                            source: model.icon
                            anchors.verticalCenter: parent.verticalCenter
                        }
-                       Label{
+                       HcText {
                            id: btntext
                            text: model.title
                            font.pixelSize: 18
@@ -254,17 +242,20 @@ Window {
         spacing: 10
 
         Rectangle {
+            id: _leftMenu
             Layout.preferredWidth: 220
             Layout.fillHeight: true
             Layout.margins: 20
             border.width: 1
             border.color: "#a0b9b9"
+            color: "transparent"
             Column{
                 anchors.fill: parent
                 Flickable{
                     id:scrollview
                     width: parent.width
                     height: parent.height - _settingBtn.height
+                    clip: true
                     contentHeight: menuList.contentHeight
                     property string selectedIndex: ""
                     ListView{
@@ -280,7 +271,7 @@ Window {
                         delegate: listDelegate
                         spacing: 10
                     }
-                    ScrollBar.vertical: ScrollBar {
+                    ScrollBar.vertical: HcScrollBar {
                         policy: scrollview.contentHeight
                                 > scrollview.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
                     }
@@ -289,6 +280,7 @@ Window {
                     id: _settingBtn
                     height: 36
                     width: parent.width - 2
+                    backgroundColor: "transparent"
                     anchors.horizontalCenter: parent.horizontalCenter
                     font.pixelSize: 18
                     text: qsTr("设置")
@@ -297,41 +289,15 @@ Window {
                     }
                 }
             }
-            // Column {
-            //     spacing: 20
-            //     anchors.horizontalCenter: parent.horizontalCenter
-            //     anchors.top: parent.top
-            //     anchors.topMargin: 80
-
-            //     Button {
-            //         width: 80
-            //         text: "加载模板"
-            //         font.pixelSize: 14
-
-            //         onClicked: {
-            //             loadFileDlg.open()
-            //         }
-            //     }
-                // Button {
-                //     width: 80
-                //     text: "保存模板"
-                //     font.pixelSize: 14
-
-                //     onClicked: {
-                //         //saveFileDlg.open()
-                //         console.log("1111111111111",Qt.resolvedUrl(""))
-                //     }
-                // }
-            // }
         }
         //右侧矩形框
         Rectangle {
-            Layout.preferredWidth: parent.width - 230
+            Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.margins: 20
             border.width: 1
             border.color: "#a0b9b9"
-            color: "#F3F3F3"
+            color: "transparent"
             StackLayout {
                 id: stackLayout
                 width: parent.width - 10
@@ -342,7 +308,8 @@ Window {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    asynchronous: true
+                    //asynchronous: true
+                    asynchronous: false
                 }
             }
         }
