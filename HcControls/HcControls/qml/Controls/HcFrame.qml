@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls.impl
 import QtQuick.Templates as T
+import HcControls
 
 T.Frame {
     property alias border: d.border
@@ -15,11 +16,11 @@ T.Frame {
     background: Rectangle {
         id:d
         radius: 4
-        // color: {
-        //     if(Window.active){
-        //         return FluTheme.frameActiveColor
-        //     }
-        //     return FluTheme.frameColor
-        // }
+        color: {
+            if(Window.active){
+                return HcTheme.frameActiveColor
+            }
+            return HcTheme.frameColor
+        }
     }
 }
