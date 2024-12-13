@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import HcControls
-import "./content"
 
 Item {
     id:_tableWindow
@@ -21,19 +20,22 @@ Item {
                 top: parent.top
                 bottom: pagination.top
             }
-            //verticalHeaderVisible: false
-            borderWidth: 1
+            verticalHeaderVisible: false
+            borderWidth: 0
             columnSource:[
                 {   //表头控件和文本
                     title: _tableView.customItem(com_column_checbox,{title:qsTr("")}),
                     dataIndex: 'checkbox',
                     width:70,
-                    frozen: true
+                    //frozen: true
                 },
                 {
-                    title: _tableView.customItem(com_column_filter_name,{title:qsTr("Name")}),
-                    dataIndex: 'name',
-                    readOnly:true
+                    title: _tableView.customItem(com_column_filter_name,{title:qsTr("No.")}),
+                    dataIndex: 'index',
+                    readOnly:true,
+                    maximumWidth:350,
+                    //表头是否可变化宽度
+                    positrionChange: true
                 },
                 {
                     title: qsTr("Sex"),
@@ -53,21 +55,21 @@ Item {
                     positionChange: true
                 },
                 {
-                    title: qsTr("Address"),
-                    dataIndex: 'address',
+                    title: qsTr("时间"),
+                    dataIndex: 'time',
                     width:200,
                     minimumWidth:100,
                     maximumWidth:250
                 },
                 {
-                    title: qsTr("A"),
+                    title: qsTr("XXX"),
                     dataIndex: 'a',
                     width:200,
                     minimumWidth:100,
                     maximumWidth:250
                 },
                 {
-                    title: qsTr("B"),
+                    title: qsTr("XXX"),
                     dataIndex: 'b',
                     width:200,
                     minimumWidth:100,
@@ -89,11 +91,11 @@ Item {
             anchors.bottomMargin: 10
             anchors.right: parent.right
             anchors.rightMargin: 50
-            totalRecords: _tableView.rows
+            totalRecords: 81
             recordsPerPage:10
             onRequestPage: (page,count)=>{
-            console.log("onRequestPage",page,count,currentPage)
-                loadData(page,81)
+            console.log("onRequestPage",page,count)
+                loadData(page,count)
             }
         }
 
@@ -109,22 +111,8 @@ Item {
         id:com_column_filter_name
         Item{
             Text{
-                text: qsTr("Name")
+                text: qsTr("No.")
                 anchors.centerIn: parent
-            }
-            HcIconButton {
-                width: 35
-                height: 20
-                _imageWidth: 20
-                verticalPadding:0
-                horizontalPadding:0
-                _src: ""
-                anchors{
-                    right: parent.right
-                    rightMargin: 3
-                    verticalCenter: parent.verticalCenter
-                }
-
             }
         }
     }
@@ -196,7 +184,6 @@ Item {
         id:com_combobox
         HcComboBox {
             anchors.fill: parent
-            //focus: true
             editText: display
             editable: true
             model: ListModel {
@@ -213,6 +200,7 @@ Item {
             onCommit: {
                 editTextChaged(editText)
                 _tableView.closeEditor()
+                console.log("_tableView.customItem",JSON.stringify(_tableView.getRow(row)))
             }
         }
     }
@@ -262,48 +250,38 @@ Item {
         return uuid;
     }
 
-    function genTestObject(){
+    function genTestObject(index){
         var ages = ["100", "300", "500", "1000"];
         function getRandomAge() {
             var randomIndex = Math.floor(Math.random() * ages.length);
             return ages[randomIndex];
         }
-        var sex = ["男", "女", "非二元性别", "生理性别与心理性别不一致"];
+        var sex = ["男", "女", "跨性别"];
         function getRandomSex() {
             var randomIndex = Math.floor(Math.random() * sex.length);
             return sex[randomIndex];
         }
-        var names = ["哇哇哇", "呜呜呜", "嘻嘻嘻", "呃呃呃","哈哈哈","哦哦哦","好好好"];
-        function getRandomName(){
-            var randomIndex = Math.floor(Math.random() * names.length);
-            return names[randomIndex];
-        }
-        var addresses = ["深圳桥洞","北京地下室","深山石洞","工地宿舍","城中村"]
-        function getRandomAddresses(){
-            var randomIndex = Math.floor(Math.random() * addresses.length);
-            return addresses[randomIndex];
-        }
         return {
             checkbox:_tableView.customItem(com_checbox,{checked:_tableWindow.selectedAll}),
-            name: getRandomName(),
+            index: index,
             age:getRandomAge(),
             sex:getRandomSex(),
-            address: getRandomAddresses(),
-            a:"A",
-            b:"B",
+            time: new Date().toLocaleTimeString(),
+            a:"xxxxxxxxxx",
+            b:"xxxxxxxxxxxxx",
             action:_tableView.customItem(com_action),
             height:70,
             _minimumHeight:50,
             _maximumHeight:100,
             _positionChange: false,
-            _key:  generateUuid()
+            _key:  index
         }
     }
 
     function loadData(page,count){
         const dataSource = []
         for(var i=0;i<count;i++){
-            dataSource.push(genTestObject())
+            dataSource.push(genTestObject(i))
         }
         _tableView.dataSource = dataSource
     }
@@ -318,6 +296,6 @@ Item {
     }
 
     Component.onCompleted: {
-        loadData(1,81)
+        loadData(1,15)
     }
 }

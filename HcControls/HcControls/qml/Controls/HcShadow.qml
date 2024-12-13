@@ -1,8 +1,9 @@
 import QtQuick
 import QtQuick.Controls
+import HcControls
 
 Item {
-    property color color: "#000000"
+    property color color: HcTheme.dark ? "#000000" : "#999999"
     property int elevation: 5
     property int radius: 4
     property int index: 0

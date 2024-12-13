@@ -224,7 +224,6 @@ Rectangle {
                 return false
             }
             implicitWidth: isHide ? Number.MIN_VALUE : TableView.view.width
-            //implicitHeight: contentHeight
             visible: !isHide
             TableView.onPooled: {
                 if(d.editPosition && d.editPosition.row === row && d.editPosition.column === column){
@@ -805,7 +804,7 @@ Rectangle {
             id:timer_horizontal_force_layout
             interval: 50
             onTriggered: {
-                Qt.callLater(() =>header_horizontal.forceLayout())
+                header_horizontal.forceLayout()
             }
         }
         delegate: com_column_header_delegate
