@@ -29,7 +29,7 @@ Item {
         popupMessage(parseInt(_jumpTo.text))
     }
 
-    HcPopup {
+    HcContentPopup {
         property string message: ""
 
         id: _hcPopup
@@ -128,20 +128,18 @@ Item {
             Row {
                 anchors.verticalCenter: parent.verticalCenter
 
-                Text {
+                HcText {
                     width: contentWidth
                     height: 32
                     text: qsTr("/")
-                    color: "#658080"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                Text {
+                HcText {
                     id: _pageNumberText
                     width: Math.max(20, contentWidth)
                     height: 32
                     text: _pagination.pageNumer
-                    color: "#658080"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

@@ -60,26 +60,26 @@ Item {
         Row {
             spacing: 8
 
-            Label {
+            HcText {
                 text: qsTr("共")
                 height: control.btnHeight
-                color: control.textColor
+                //color: control.textColor
                 font.pixelSize: control.fontSize
                 anchors.verticalCenter: parent.verticalCenter
                 verticalAlignment: Text.AlignVCenter
             }
-            Text {
+            HcText {
                 text: pageCount.toString()
-                color: control.textColor
+                //color: control.textColor
                 font.pixelSize: control.fontSize
                 height: control.btnHeight
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
             }
-            Label {
+            HcText {
                 text: qsTr("页")
                 height: control.btnHeight
-                color: control.textColor
+                //color: control.textColor
                 font.pixelSize: control.fontSize
                 anchors.verticalCenter: parent.verticalCenter
                 verticalAlignment: Text.AlignVCenter
