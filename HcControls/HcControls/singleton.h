@@ -1,5 +1,4 @@
-#ifndef SINGLETON_H
-#define SINGLETON_H
+#pragma once
 
 #include <QMutex>
 
@@ -37,4 +36,3 @@ private:                                \
     Class(const Class& other) = delete; \
     Q_DISABLE_COPY_MOVE(Class);
 
-#endif // SINGLETON_H
