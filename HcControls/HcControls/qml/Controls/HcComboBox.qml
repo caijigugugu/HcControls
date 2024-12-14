@@ -56,9 +56,24 @@ ComboBox {
             anchors.right: parent.right
             anchors.rightMargin: 8
             contextType: "2d"
+
+            Behavior on rotation {
+                NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
+            }
+
             Connections {
                 target: control
                 function onPressedChanged() { _canvas.requestPaint(); }
+            }
+            //指示器翻转效果
+            Connections {
+                target: control.popup
+                function onOpened() {
+                    _canvas.rotation = 180
+                }
+                function onClosed() {
+                    _canvas.rotation = 0
+                }
             }
             onPaint: {
                 context.reset();
@@ -85,7 +100,7 @@ ComboBox {
         validator: control.validator
         selectByMouse: control.selectTextByMouse
         font: control.font
-        color: fontColor/*control.editable ? Constants.fontLightColor : fontColor*/
+        color: fontColor
         selectionColor: control.Material.accentColor
         selectedTextColor: "white"
         verticalAlignment: Text.AlignVCenter

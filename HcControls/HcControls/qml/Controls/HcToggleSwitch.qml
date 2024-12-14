@@ -111,10 +111,10 @@ Button {
                 }
             }
         }
-        Text {
+        HcText {
             text: control.text
             font: control.font
-            color: control.textColor
+            //color: control.textColor
             Layout.alignment: Qt.AlignVCenter
             anchors.verticalCenter: parent.verticalCenter
         }
