@@ -3,18 +3,17 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Templates as T
 import QtQuick.Controls.Universal
+import HcControls
 
 Button {
-    display: Button.TextBesideIcon
-    //是否为触摸屏，true则没有hovered状态
-    property bool isTouchDevice: false
+    display: Button.IconOnly
     property int _radius: 2
     property int borderWidth: 1
-    property int _imageWidth: 12
-    property int _imageHeight: 12
+    property int iconSize: 12
     //icon与text间隔
     property int _spacing: 10
-    property string _src: ""
+    property var iconSource
+    property Component iconDelegate: com_icon
     //描边颜色
     property color borderNormolColor: "#C7D6D7"
     property color borderHoverColor: "#49B8B1"
@@ -26,39 +25,13 @@ Button {
         if(checked){
             return borderNormolColor
         }
-        return hovered && !isTouchDevice ? borderHoverColor : borderNormolColor
+        return hovered ? borderHoverColor : borderNormolColor
     }
     //按钮背景颜色
-    property Gradient buttonNormolGradient: Gradient {
-        GradientStop {
-            position: 0
-            color: "#F9FBFB"
-        }
-
-        GradientStop {
-            position: 1
-            color: "#E6E6E6"
-        }
-        orientation: Gradient.Vertical
-    }
-    property Gradient buttonHoverGradient: buttonNormolGradient
-    property Gradient buttonCheckedGradient: Gradient {
-        GradientStop {
-            position: 0
-            color: "#54C4BE"
-        }
-        GradientStop {
-            position: 1
-            color: "#309D96"
-        }
-        orientation: Gradient.Vertical
-    }
-    property Gradient buttonDisableGradient: Gradient {
-        GradientStop {
-            color: "#C1C1C1"
-        }
-        orientation: Gradient.Vertical
-    }
+    property Gradient buttonNormolGradient: HcTheme.dark ?  Constants.buttonNormolDeepGradient : Constants.buttonNormolGradient
+    property Gradient buttonHoverGradient: HcTheme.dark ?  Constants.buttonHoverDeepGradient : Constants.buttonHoverGradient
+    property Gradient buttonCheckedGradient: HcTheme.dark ?  Constants.buttonPressedDeepGradient : Constants.buttonPressedGradient
+    property Gradient buttonDisableGradient: Constants.buttonDisableGradient
     property Gradient buttonColor: {
         if(!enabled){
             return buttonDisableGradient
@@ -66,7 +39,7 @@ Button {
         if(checked){
             return buttonCheckedGradient
         }
-        return hovered && !isTouchDevice ? buttonHoverGradient : buttonNormolGradient
+        return hovered ? buttonHoverGradient : buttonNormolGradient
     }
     //字体颜色
     property color fontNormolColor: "#4B5153"
@@ -80,7 +53,7 @@ Button {
         if(checked){
             return fontCheckedColor
         }
-        return hovered && !isTouchDevice ? fontHoverColor : fontNormolColor
+        return hovered ? fontHoverColor : fontNormolColor
     }
     //图标颜色
     property color iconNormolColor: "#658080"
@@ -94,9 +67,16 @@ Button {
         if(checked){
             return iconCheckedColor
         }
-        return hovered && !isTouchDevice ? iconHoverColor : iconNormolColor
+        return hovered ? iconHoverColor : iconNormolColor
     }
+    property string contentDescription: ""
+    Accessible.role: Accessible.Button
+    Accessible.name: control.text
+    Accessible.description: contentDescription
+    Accessible.onPressAction: control.clicked()
+
     id: control
+    focusPolicy:Qt.TabFocus
     //默认字体大小
     font.pixelSize: 28
     background: Rectangle {
@@ -106,17 +86,56 @@ Button {
         gradient: control.buttonColor
         border.color: control.borderColor
         border.width: control.borderWidth
+        HcFocusRectangle{
+            visible: control.activeFocus
+        }
     }
     // 定制搜索图标
-    contentItem: Loader {
+    contentItem: HcLoader {
         sourceComponent: {
             if(display === Button.TextUnderIcon){
                 return com_column
             }
             return com_row
         }
-        Component.onDestruction: sourceComponent = undefined
     }
+
+    // 字体图标的ttf组件
+    Component {
+        id: ttfComponent
+        HcIcon {
+            id: text_icon
+            font.pixelSize: control.iconSize
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            iconColor: control.iconColor
+            iconSource: control.iconSource
+        }
+    }
+
+    // 自定义图标的 ColorImage 组件
+    Component {
+        id: iconComponent
+        ColorImage {
+            id: custom_icon
+            source: control.iconSource
+            width: control.iconSize
+            height: control.iconSize
+            color: control.iconColor
+            fillMode: Image.PreserveAspectFit
+        }
+    }
+
+    Component {
+        id: com_icon
+        HcLoader {
+            id: iconLoader
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+            sourceComponent: isNaN(control.iconSource)
+                             ? iconComponent : ttfComponent
+        }
+    }
+
     Component {
         id: com_row
         Item {
@@ -124,16 +143,11 @@ Button {
             Row {
                 anchors.centerIn: parent
                 spacing: control._spacing
-                ColorImage {
-                    width: control._imageWidth
-                    height: control._imageHeight
-                    source: _src
-                    color: control.iconColor
-                    fillMode: Image.PreserveAspectFit
+                HcLoader{
+                    sourceComponent: iconDelegate
                     anchors.verticalCenter: parent.verticalCenter
                     visible: display !== Button.TextOnly
                 }
-
                 Text {
                     text: control.text
                     font: control.font
@@ -151,12 +165,8 @@ Button {
             Column{
                 anchors.centerIn: parent
                 spacing: control._spacing
-                ColorImage{
-                    width: control._imageWidth
-                    height: control._imageHeight
-                    source: _src
-                    color: control.iconColor
-                    fillMode: Image.PreserveAspectFit
+                HcLoader{
+                    sourceComponent: iconDelegate
                     anchors.horizontalCenter: parent.horizontalCenter
                     visible: display !== Button.TextOnly
                 }
@@ -164,10 +174,27 @@ Button {
                     text: control.text
                     font: control.font
                     color: control.textColor
+                    width: control.width
+                    wrapMode: Text.WrapAnywhere
                     visible: display !== Button.IconOnly
-                    Layout.alignment: Qt.AlignHCenter
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }
+    }
+    HcTooltip{
+        id:tool_tip
+        visible: {
+            if(control.text === ""){
+                return false
+            }
+            if(control.display !== Button.IconOnly){
+                return false
+            }
+            return hovered
+        }
+        text:control.text
+        delay: 1000
     }
 }

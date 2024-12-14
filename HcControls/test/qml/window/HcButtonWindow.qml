@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import HcControls
-import "./content"
 Item {
     id:_hcDialogWindow
     property bool disabled: false
@@ -36,15 +35,14 @@ Item {
                             checked = !checked
                         }
                     }
-                    HcButton {
+                    HcTextButton {
                         id: _disableBtn
                         height: 36
-                        text: qsTr("长文本按钮")
+                        text: qsTr("文本按钮")
                         Layout.alignment: Qt.AlignLeft
                         Layout.leftMargin: 20
-                        enabled: !disabled
+                        enabled: !_hcDialogWindow.disabled
                         onClicked: {
-                            checked = !checked
                         }
                     }
                 }
@@ -71,11 +69,10 @@ Item {
                         id: _onlyIconBtn1
                         width:40
                         height: 36
-                        _imageWidth: 16
-                        _imageHeight: 16
+                        iconSize: 16
                         _radius: 2
                         enabled: !_hcDialogWindow.disabled
-                        _src: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/btn_delete.png"
+                        iconSource: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/btn_delete.png"
                         onClicked: {
                             checked = !checked
                         }
@@ -86,7 +83,7 @@ Item {
                         height: 28
                         _radius: width/2
                         enabled: !_hcDialogWindow.disabled
-                        _src: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/btn_add.png"
+                        iconSource: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/btn_add.png"
                         onClicked: {
                             checked = !checked
                         }
@@ -103,13 +100,13 @@ Item {
                         id: _iconBtn1
                         width: 220
                         height: 70
-                        _imageWidth: 28
-                        _imageHeight:28
+                        iconSize: 28
+                        display: Button.TextBesideIcon
                         _radius: 8
                         text: qsTr("新建")
                         font.pixelSize: 28
                         enabled: !disabled
-                        _src: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/btn_add.png"
+                        iconSource: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/btn_add.png"
                         onClicked: {
                             checked = !checked
                         }
@@ -118,15 +115,14 @@ Item {
                         id: _iconBtn2
                         width: 220
                         height: 70
-                        _imageWidth: 28
-                        _imageHeight:28
+                        iconSize:28
                         display: Button.TextUnderIcon
                         _radius: 8
                         _spacing: 0
                         text: qsTr("删除")
                         enabled: !disabled
                         font.pixelSize: 28
-                        _src: "file:///E:/work/HcControls/qmlcontrols/HcControls/src/qml/Icon/btn_delete.png"
+                        iconSource: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/btn_delete.png"
                         onClicked: {
                             checked = !checked
                         }
@@ -147,12 +143,47 @@ Item {
                     }
                 }
             }
+            HcFrame{
+                Layout.fillWidth: true
+                Layout.preferredHeight: 100
+                padding: 10
+                Layout.topMargin: 20
+                Row{
+                spacing: 50
+                    HcRadioButtons{
+                        spacing: 8
+                        disabled: _hcDialogWindow.disabled
+                        HcRadioButton{
+                            text: qsTr("Radio Button_1")
+                        }
+                        HcRadioButton{
+
+                            text: qsTr("Radio Button_2")
+                        }
+                        HcRadioButton{
+                            text: qsTr("Radio Button_3")
+                        }
+                    }
+                    HcRadioButtons{
+                        spacing: 8
+                        disabled: _hcDialogWindow.disabled
+                        orientation: Qt.Horizontal
+                        anchors.verticalCenter: parent.verticalCenter
+                        HcCheckBox{
+                            text: qsTr("Radio Button_1")
+                        }
+                        HcCheckBox{
+                            text: qsTr("Radio Button_2")
+                        }
+                        HcCheckBox{
+                            text: qsTr("Radio Button_3")
+                        }
+                    }
+                }
+            }
          }
-         // ScrollBar.vertical: ScrollBar {
-         //     policy:ScrollBar.AlwaysOn
-         // }
     }
-    ScrollBar {
+    HcScrollBar {
         id: scroll_bar
         anchors{
             top: scrollView.top
