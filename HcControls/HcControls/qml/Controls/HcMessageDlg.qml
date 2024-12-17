@@ -1,13 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-
+import HcControls
 
 Item {
     id: _item
     property int popupWidth: 400
     property int popupHeight: 300
 
-    property int headerHeight: 50
+    property int headerHeight: 44
     property string title: qsTr("提示")
     property string message: ""
     property string positiveText: qsTr("确认")
@@ -15,20 +15,7 @@ Item {
     property bool onlyConfirm: false
     property bool showCloseIcon: false
 
-    //标题栏渐变色
-    property Gradient headerGradient: Gradient {
-        orientation: Gradient.Vertical
-        GradientStop {
-            position: 0
-            color: "#33494D"
-        }
-        GradientStop {
-            position: 1
-            color: "#33494D"
-        }
-    }
     property int headerRadius: 5
-    property color borderColor: "#FF1414"
     property int borderWidth: 1
     //字体大小
     property int headerFontSize: 16
@@ -37,8 +24,6 @@ Item {
     //字体颜色
     property color headerFontColor: "#FFFFFF"
     property color messageColor: "#FFFFFF"
-    //主体颜色
-    property color bodyBackColor: "#212B2D"
 
     property int titleLeftMargin: 10
     property int titleTopMargin: 0 //标题在标题栏垂直方向距离，为0垂直居中
@@ -85,19 +70,21 @@ Item {
         Rectangle {
             anchors.fill: parent
             radius: headerRadius
-            color: bodyBackColor
-            border.width: borderWidth
-            border.color: borderColor
-
-            Rectangle {
+            color: HcTheme.dark ? Constants.dialogDeepBackground : Constants.dialogBackground
+            border.width: HcTheme.dark ? 0 : borderWidth
+            border.color: Constants.dialogHeadBorderColor
+            HcShadow{
+                radius: headerRadius
+                color: Constants.dialogHeadBorderColor
+            }
+            HcRoundedRectangle {
                 id: _header
-                width: parent.width - 2 * borderWidth
+                width: parent.width
                 height: headerHeight
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.topMargin: borderWidth
-                gradient: headerGradient
-                radius: headerRadius
+                gradient: HcTheme.dark ?  Constants.dialogHeadDeepGradient : Constants.dialogHeadGradient
+                radius: [headerRadius,headerRadius,0,0]
 
                 Label {
                     id: _title
@@ -135,6 +122,13 @@ Item {
                         }
                     }
                 }
+                //分割线
+                HcDivider{
+                    width: parent.width
+                    height: 1
+                    anchors.bottom: parent.bottom
+                    dividerColor: HcTheme.dark ? "#000000" : ""
+                }
             }
             Column {
                 id: _col
@@ -156,15 +150,69 @@ Item {
                     wrapMode: Text.Wrap
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
+                // Row {
+                //     id: _row
+                //     width: parent.width
+                //     anchors.horizontalCenter: parent.horizontalCenter
+                //     height: (popupHeight - _header.height) / 3
+                //     Item {
+                //         width: buttonLeftMargin
+                //         height: 10
+                //     }
+                //     HcButton {
+                //         id: _cancelBtn
+                //         width: _item.buttonWidth
+                //         height: _item.buttonHeight
+                //         text: _item.negativeText
+                //         visible: !(_item.onlyConfirm)
+                //         font.pixelSize: _item.buttonFontSize
+                //         anchors.bottom: parent.bottom
+                //         anchors.bottomMargin: buttonBottomMargin
+                //         onClicked: {
+                //             if (onNegativeClickListener) {
+                //                 onNegativeClickListener()
+                //             } else {
+                //                 negativeClicked()
+                //                 _popup.close()
+                //             }
+                //         }
+                //     }
+                //     Item {
+                //         width: parent.width - _cancelBtn.width - _confirmBtn.width - 2 *buttonLeftMargin // 动态计算空隙
+                //         height: 10
+                //     }
+                //     HcButton {
+                //         id: _confirmBtn
+                //         width: _item.buttonWidth
+                //         height: _item.buttonHeight
+                //         text: _item.positiveText
+                //         font.pixelSize: _item.buttonFontSize
+                //         anchors.bottom: parent.bottom
+                //         anchors.bottomMargin: buttonBottomMargin
+                //         onClicked: {
+                //             if (onPositiveClickListener) {
+                //                 onPositiveClickListener()
+                //             } else {
+                //                 positiveClicked()
+                //                 console.log("parent.width",parent.width,parent.height)
+                //                 _popup.close()
+                //             }
+                //         }
+                //     }
+                // }
                 Row {
                     id: _row
                     width: parent.width
-                    anchors.horizontalCenter: parent.horizontalCenter
                     height: (popupHeight - _header.height) / 3
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    // 左占位
                     Item {
-                        width: buttonLeftMargin
+                        id: leftSpacer
+                        width: _cancelBtn.visible && _confirmBtn.visible ? buttonLeftMargin : (parent.width - _confirmBtn.width) / 2
                         height: 10
                     }
+
+                    // 取消按钮
                     HcButton {
                         id: _cancelBtn
                         width: _item.buttonWidth
@@ -183,10 +231,15 @@ Item {
                             }
                         }
                     }
+
+                    // 中间占位（控制两个按钮间距）
                     Item {
-                        width: parent.width - _cancelBtn.width - _confirmBtn.width - 2 *buttonLeftMargin // 动态计算空隙
+                        id: middleSpacer
+                        width: _cancelBtn.visible && _confirmBtn.visible ? (parent.width - _cancelBtn.width - _confirmBtn.width - 2 * buttonLeftMargin) : 0
                         height: 10
                     }
+
+                    // 确认按钮
                     HcButton {
                         id: _confirmBtn
                         width: _item.buttonWidth
@@ -200,10 +253,16 @@ Item {
                                 onPositiveClickListener()
                             } else {
                                 positiveClicked()
-                                console.log("parent.width",parent.width,parent.height)
                                 _popup.close()
                             }
                         }
+                    }
+
+                    // 右占位
+                    Item {
+                        id: rightSpacer
+                        width: _cancelBtn.visible && _confirmBtn.visible ? buttonLeftMargin : (parent.width - _confirmBtn.width) / 2
+                        height: 10
                     }
                 }
             }

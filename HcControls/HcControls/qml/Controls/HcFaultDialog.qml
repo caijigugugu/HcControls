@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import HcControls
 
 Item {
     property int popupWidth: 500
@@ -11,7 +12,9 @@ Item {
     property string solution: ""  //处理方法
 
     property int buttonFlags: Constants.AlarmHandleOption.Handle_None
-
+    property int _radius: 5
+    property int borderWidth: 1
+    property int headerHeight: 44
     property string noneText: qsTr("确认")
     property string skipText: qsTr("跳过")
     property string retryText: qsTr("重试")
@@ -57,32 +60,22 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            radius: 10
-            color: Constants.bodyBackground
-            border.width: 1
-            border.color: "#b7d4d4"
+            radius: _radius
+            color: HcTheme.dark ? Constants.dialogDeepBackground : Constants.dialogBackground
+            border.width: HcTheme.dark ? 0 : borderWidth
+            border.color: Constants.dialogHeadBorderColor
+            HcShadow{
+                radius: _radius
+                color: Constants.dialogHeadBorderColor
+            }
         }
 
-        Rectangle {
+        HcRoundedRectangle {
             width: parent.width
-            height: 50
-            color: "#a1e9ee"
-            border.width: 1
-            border.color: "#b7d4d4"
-            radius: 10
+            height: headerHeight
+            gradient: HcTheme.dark ?  Constants.dialogHeadDeepGradient : Constants.dialogHeadGradient
 
-            Canvas {
-                anchors.fill: parent
-                onPaint: {
-                    if (parent.radius !== 0) {
-                        var ctx = getContext("2d")
-
-                        ctx.fillStyle = "#a1e9ee"
-                        ctx.clearRect(1, parent.radius + 1, parent.width - 2, parent.height - parent.radius - 1)
-                        ctx.fillRect(1, parent.radius + 1, parent.width - 2, parent.height - parent.radius - 1)
-                    }
-                }
-            }
+            radius: [_radius,_radius,0,0]
 
             Item {
                 width: parent.width - 2
@@ -98,18 +91,25 @@ Item {
                     anchors.leftMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
                 }
-                Text {
+                HcText {
                     width: contentWidth
                     height: contentHeight
                     text:  _item.customTitle !== "" ? _item.customTitle : (_item.level >= 0 && _item.level < _item.titleOptions.length) ? titleOptions[level] : qsTr("未知错误")
                     font.pixelSize: 16
-                    color: "#484848"
+                    //color: "#484848"
                     horizontalAlignment: Text.AlignRight
                     verticalAlignment: Text.AlignVCenter
                     anchors.left: _colorImage.right
                     anchors.leftMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
                 }
+            }
+            //分割线
+            HcDivider{
+                width: parent.width
+                height: 1
+                anchors.bottom: parent.bottom
+                dividerColor: HcTheme.dark ? "#000000" : ""
             }
         }
 

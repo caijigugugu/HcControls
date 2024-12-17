@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import HcControls
-import "./content"
 Item {
     id:_hcDialogWindow
     Flickable {
@@ -21,7 +20,7 @@ Item {
                 padding: 10
                 HcButton {
                     id: _faultBtn
-                    width:60
+                    //width:60
                     height: 36
                     text: qsTr("故障弹窗")
                     font.pixelSize: 14
@@ -48,7 +47,7 @@ Item {
                                     dialog.buttonFlags = 0x01 | 0x02 | 0x04
                                     dialog.uuid = "111"
                                     dialog.extraParams = "extraParams"
-                                    dialog.popupMessage(3 , error.description, error.handleSuggest);
+                                    dialog.open()
                                 } else {
                                     console.error("Failed to create HcFaultDialog");
                                 }
@@ -65,7 +64,7 @@ Item {
                 padding: 10
                 HcButton {
                     id: _messageBtn
-                    width:60
+                    //width:60
                     height: 36
                     text: qsTr("提示弹窗")
                     font.pixelSize: 14
@@ -99,26 +98,68 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 68
                 padding: 10
+                Row {
+                    spacing: 50
+                    HcButton {
+                        id: _cardBtn1
+                        //width:60
+                        height: 36
+                        text: qsTr("卡片弹窗1")
+                        font.pixelSize: 14
+                        Layout.alignment: Qt.AlignLeft
+                        Layout.leftMargin: 20
+
+                        onClicked: {
+                            cardDlg.showInfo(qsTr("日志下载已完成!"),qsTr("详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息!"),500000)
+                        }
+                    }
+                    HcButton {
+                        id: _cardBtn2
+                        //width:60
+                        height: 36
+                        text: qsTr("卡片弹窗2")
+                        font.pixelSize: 14
+                        Layout.alignment: Qt.AlignLeft
+                        Layout.leftMargin: 20
+
+                        onClicked: {
+                            cardDlg.showWarning(qsTr("XXXXXXXXXXX超时!"),qsTr("详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息!"),500000)
+                        }
+                    }
+                    HcButton {
+                        id: _cardBtn3
+                        //width:60
+                        height: 36
+                        text: qsTr("卡片弹窗3")
+                        font.pixelSize: 14
+                        Layout.alignment: Qt.AlignLeft
+                        Layout.leftMargin: 20
+
+                        onClicked: {
+                            cardDlg.showError(qsTr("XXXXXXXXXXX告警!"),qsTr("详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息!"),500000)
+                        }
+                    }
+                }
+            }
+            HcFrame {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 68
+                padding: 10
                 HcButton {
-                    id: _cardBtn
-                    width:60
+                    id: _initializrBtn
                     height: 36
-                    text: qsTr("卡片弹窗")
+                    text: qsTr("脚手架")
                     font.pixelSize: 14
                     Layout.alignment: Qt.AlignLeft
                     Layout.leftMargin: 20
 
                     onClicked: {
-                        cardDlg.showInfo(qsTr("日志下载已完成日志下载已完成日志下载已完成日志下载已完成日志下载已完成"),qsTr("详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息详细信息!"),5000)
+                        initializr.showDialog()
                     }
                 }
             }
          }
-         ScrollBar.vertical: ScrollBar {
-             // policy: scrollView.contentHeight
-             //         > scrollView.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
-             policy:ScrollBar.AlwaysOn
-         }
+         ScrollBar.vertical: HcScrollBar {}
     }
     Component {
         id: faultDialogComponent
@@ -132,41 +173,43 @@ Item {
                 _faultPopup.close()
             }
             customTitle: "hhhhh"
-            buttonComponent: Row {
-                spacing: 60
-                HcButton {
-                    id: _stopBtn1
-                    width: 60
-                    height: 30
-                    text: "自定义1"
-                    font.pixelSize: 16
-                    onClicked: {
-                        console.log("button clicked","自定义1",uuid,extraParams)
-                        _faultPopup.close()
-                    }
-                }
-                HcButton {
-                    id: _stopBtn2
-                    width: 60
-                    height: 30
-                    text: "自定义2"
-                    font.pixelSize: 16
-                    onClicked: {
-                        console.log("button clicked","自定义2",uuid,extraParams)
-                        _faultPopup.close()
-                    }
-                }
-            }
+            // buttonComponent: Row {
+            //     spacing: 60
+            //     HcButton {
+            //         id: _stopBtn1
+            //         width: 60
+            //         height: 30
+            //         text: "自定义1"
+            //         font.pixelSize: 16
+            //         onClicked: {
+            //             console.log("button clicked","自定义1",uuid,extraParams)
+            //             _faultPopup.close()
+            //         }
+            //     }
+            //     HcButton {
+            //         id: _stopBtn2
+            //         width: 60
+            //         height: 30
+            //         text: "自定义2"
+            //         font.pixelSize: 16
+            //         onClicked: {
+            //             console.log("button clicked","自定义2",uuid,extraParams)
+            //             _faultPopup.close()
+            //         }
+            //     }
+            // }
         }
     }
-
+    HcInitializrWindow{
+        id: initializr
+    }
     Component {
         id: messageDlgComponent
         HcMessageDlg {
             id: messageDlg
             popupWidth: 450
             title: qsTr("弹窗标题")
-
+            //onlyConfirm: true
             showCloseIcon: true
             onPositiveClicked: {
                 console.log("confirmBtn clicked")
@@ -180,6 +223,7 @@ Item {
     HcCardPopupDlg {
         id:cardDlg
         root: contentItem
+        _positionCorner: Constants.PositionCorner.BottomRight
     }
 
 }

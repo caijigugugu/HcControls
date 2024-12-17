@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import HcControls
 
 HcObject {
     property var root
@@ -13,17 +14,17 @@ HcObject {
     property int screenY: -1
     property int popupX: -1 //弹窗相对于区域坐标，默认右上角
     property int popupY: -1
-    property string promptIconSource: "../Icon/prompt.svg" //提示图标
-    property string closeIconSource: "../Icon/close.svg" //关闭图标
+    property int _positionCorner: Constants.PositionCorner.TopRight
+    property string promptIcon_info: "../Icon/通知.svg" //提示图标
+    property string promptIcon_warning: "../Icon/警告.svg"
+    property string closeIconSource: "../Icon/关闭.svg" //关闭图标
     //图标可配置颜色，默认原始颜色
-    property string promptIconColor: "#09C9D7"
-    property string closeIconColor: "#FFFFFF"
+    // property string promptIconColor: "#09C9D7"
+    // property string closeIconColor: "#FFFFFF"
     //提示文本
-    property string titleColor: "#FFFFFF"
     property int titleSize: 18
     //详细信息文本
     property int detailSize: 14
-    property string detailColor: "#FFFFFF"
     //提示图标大小
     property int promptIconWidth: 20
     property int promptIconHeight: 20
@@ -31,21 +32,25 @@ HcObject {
     property int closeIconWidth: 15
     property int closeIconHeight: 15
     property int radius: 4 //圆角
-    property string backgroundColor: "#353535" //背景颜色
-    property double backgroundOpacity: 0.8 //背景透明度
-    property string borderColor: "#16C1CE" //描边颜色
     property int borderWidth: 1 //描边宽度
     id: cardDlg
 
     function showInfo(prompt = "",detailText = "",timeOut = 10000){
-        return _item.createDlg(prompt,detailText,timeOut)
+        return _item.createDlg(_item.const_info,prompt,detailText,timeOut)
     }
-
+    function showWarning(prompt = "",detailText = "",timeOut = 10000){
+        return _item.createDlg(_item.const_warning,prompt,detailText,timeOut)
+    }
+    function showError(prompt = "",detailText = "",timeOut = 10000){
+        return _item.createDlg(_item.const_error,prompt,detailText,timeOut)
+    }
     HcObject {
         id: _item
         property var screenLayout: null
-
-        function createDlg(prompt,detailText,timeOut) {
+        property string const_info: "info"
+        property string const_warning: "warning"
+        property string const_error: "error"
+        function createDlg(type,prompt,detailText,timeOut) {
             if(screenLayout){
                 //获取容器中最后一个对象，如果标题和内容都相同，且开启刷新，则刷新展示时间
                 var last = screenLayout.getLastloader()
@@ -56,7 +61,7 @@ HcObject {
                 }
             }
             initScreenLayout()
-            return contentComponent.createObject(screenLayout,{title:prompt,duration:timeOut,detail:detailText})
+            return contentComponent.createObject(screenLayout,{type:type,title:prompt,duration:timeOut,detail:detailText})
         }
         function initScreenLayout(){
             if(screenLayout == null){
@@ -100,10 +105,113 @@ HcObject {
                 property int duration: 1000
                 property string title: qsTr("提示")
                 property string detail: ""
+                property string type
+                property string promptIconSource:{
+                    switch(content.type){
+                        case _item.const_info:
+                            return cardDlg.promptIcon_info
+                        case _item.const_warning:
+                            return cardDlg.promptIcon_warning
+                        case _item.const_error:
+                            return cardDlg.promptIcon_warning
+                        }
+                }
+                property string backColor:{
+                    if(HcTheme.dark) {
+                        switch(content.type){
+                        case _item.const_info:
+                            return Constants.cardDlgBackDeepColor_Info
+                        case _item.const_warning:
+                            return Constants.cardDlgBackDeepColor_Warning
+                        case _item.const_error:
+                            return Constants.cardDlgBackDeepColor_Error
+                        }
+                    } else {
+                        return Constants.cardDlgBackColor
+                    }
+                }
+                property color borderColor:{
+                    if(HcTheme.dark) {
+                        switch(content.type){
+                        case _item.const_info:
+                            return Constants.cardDlgBorderDeepColor_Info
+                        case _item.const_warning:
+                            return Constants.cardDlgBorderDeepColor_Warning
+                        case _item.const_error:
+                            return Constants.cardDlgBorderDeepColor_Error
+                        }
+                    } else {
+                        return Constants.cardDlgBorderColor
+                    }
+                }
+                property string titleColor: {
+                    if(HcTheme.dark) {
+                        return Constants.cardDlgTextDeepColor
+                    } else {
+                        switch(content.type){
+                        case _item.const_info:
+                            return Constants.cardDlgTextColor_Info
+                        case _item.const_warning:
+                            return Constants.cardDlgTextColor_Warning
+                        case _item.const_error:
+                            return Constants.cardDlgTextColor_Error
+                        }
+                    }
+                }
+                property string detailColor: {
+                    if(HcTheme.dark) {
+                        return Constants.cardDlgTextDeepColor
+                    } else {
+                        return Constants.cardDlgTextColor_Info
+                    }
+                }
+                property string promptIconColor: {
+                    if(HcTheme.dark) {
+                        switch(content.type){
+                        case _item.const_info:
+                            return Constants.cardDlgIconColor_Info
+                        case _item.const_warning:
+                            return Constants.cardDlgIconColor_Warning
+                        case _item.const_error:
+                            return Constants.cardDlgIconColor_Error
+                        }
+                    } else {
+                        switch(content.type){
+                        case _item.const_info:
+                            return Constants.cardDlgIconColor_Info
+                        case _item.const_warning:
+                            return Constants.cardDlgIconColor_Warning
+                        case _item.const_error:
+                            return Constants.cardDlgIconDeepColor_Error
+                        }
+                    }
+                }
                 width:  popupWidth
                 height: loader.height
-                x: cardDlg.popupX !== -1 ? cardDlg.popupX : parent.width - width// 右上角 x 坐标
-                y: cardDlg.popupY !== -1 ? cardDlg.popupY : 0 // 右上角 y 坐标
+                x:{
+                    if (cardDlg.popupX !== -1) {
+                        return cardDlg.popupX;
+                    } else {
+                        switch (_positionCorner) {
+                        case Constants.PositionCorner.TopRight: return parent.width - width;
+                        case Constants.PositionCorner.TopLeft: return 0;
+                        case Constants.PositionCorner.BottomRight: return parent.width - width;
+                        case Constants.PositionCorner.BottomLeft: return 0;
+                        }
+                    }
+                }
+                y: {
+                    if (cardDlg.popupY !== -1) {
+                        return cardDlg.popupY;
+                    } else {
+                        switch (_positionCorner) {
+                        case Constants.PositionCorner.TopRight: return 0;
+                        case Constants.PositionCorner.TopLeft: return 0;
+                        case Constants.PositionCorner.BottomRight: return 500;
+                        case Constants.PositionCorner.BottomLeft: return parent.height - height;
+                        }
+                    }
+                }
                 function close(){
                     content.destroy()
                 }
@@ -170,10 +278,7 @@ HcObject {
             id: popup
             width:  popupWidth
             height: _col.height
-            color: Qt.rgba(Qt.color(cardDlg.backgroundColor).r,
-                   Qt.color(cardDlg.backgroundColor).g,
-                   Qt.color(cardDlg.backgroundColor).b,
-                   cardDlg.backgroundOpacity)
+            color: _super.backColor
             radius: cardDlg.radius
             Column {
                 id: _col
@@ -185,10 +290,7 @@ HcObject {
                     width: parent.width
                     height: _title.height + 10
                     radius: cardDlg.radius
-                    color: Qt.rgba(Qt.color(cardDlg.backgroundColor).r,
-                                   Qt.color(cardDlg.backgroundColor).g,
-                                   Qt.color(cardDlg.backgroundColor).b,
-                                   cardDlg.backgroundOpacity)
+                    color: _super.backColor
                     Canvas {
                         id: borderCanvas
                         anchors.fill: parent
@@ -196,7 +298,7 @@ HcObject {
                             var ctx = getContext("2d");
                             ctx.clearRect(0, 0, width, height);
                             if (cardDlg.borderWidth > 0) {
-                                ctx.strokeStyle = cardDlg.borderColor;
+                                ctx.strokeStyle = _super.borderColor;
                                 ctx.lineWidth = cardDlg.borderWidth;
 
                                 ctx.beginPath();
@@ -215,10 +317,10 @@ HcObject {
 
                     ColorImage {
                         id: _promptIcon
-                        source: cardDlg.promptIconSource
+                        source: _super.promptIconSource
                         width: cardDlg.promptIconWidth
                         height: cardDlg.promptIconHeight
-                        color: cardDlg.promptIconColor
+                        color: _super.promptIconColor
                         anchors.left: parent.left
                         anchors.leftMargin: 20
                         anchors.verticalCenter: parent.verticalCenter
@@ -232,7 +334,7 @@ HcObject {
                         anchors.left: _promptIcon.right
                         anchors.leftMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        color: cardDlg.titleColor
+                        color: _super.titleColor
                         font.pixelSize: cardDlg.titleSize
                         text: _super.title
                         horizontalAlignment: Text.AlignLeft
@@ -244,7 +346,7 @@ HcObject {
                     ColorImage {
                         id: _closeIcon
                         source: cardDlg.closeIconSource
-                        color: cardDlg.closeIconColor
+                        color: _super.titleColor
                         width: cardDlg.closeIconWidth
                         height: cardDlg.closeIconHeight
                         anchors.right: parent.right
@@ -268,10 +370,7 @@ HcObject {
                     height: _detail.height
                     anchors.left: parent.left
                     radius: cardDlg.radius
-                    color: Qt.rgba(Qt.color(cardDlg.backgroundColor).r,
-                                   Qt.color(cardDlg.backgroundColor).g,
-                                   Qt.color(cardDlg.backgroundColor).b,
-                                   cardDlg.backgroundOpacity)
+                    color: _super.backColor
                     Canvas {
                         id: _borderCanvas
                         anchors.fill: parent
@@ -279,7 +378,7 @@ HcObject {
                             var ctx = getContext("2d");
                             ctx.clearRect(0, 0, width, height);
                             if (cardDlg.borderWidth > 0) {
-                                ctx.strokeStyle = cardDlg.borderColor;
+                                ctx.strokeStyle = _super.borderColor;
                                 ctx.lineWidth = cardDlg.borderWidth;
 
                                 ctx.beginPath();
@@ -296,10 +395,12 @@ HcObject {
                     }
                     Label {
                         id: _detail
-                        width: parent.width - 60
+                        width: parent.width - 55 - cardDlg.promptIconWidth
                         height: implicitHeight
-                        anchors.centerIn: parent
-                        color: cardDlg.detailColor
+                        //anchors.centerIn: parent
+                        anchors.left: parent.left
+                        anchors.leftMargin: cardDlg.promptIconWidth + 30
+                        color: _super.detailColor
                         font.pixelSize: cardDlg.detailSize
                         text: _super.detail
                         horizontalAlignment: Text.AlignLeft
