@@ -3,3 +3,8 @@ build-HcControls-Desktop_Qt_6_5_3_MSVC2019_64bit-Release/
 build-HcControls-Desktop_Qt_6_5_3_MSVC2019_64bit-Debug/
 HcControls/CMakeLists.txt.user
 HcControls/build/
+HcControls/bin/Debug/
+
+HcControls/bin/
+
+HcControls/HcControls/Qt6/imports/HcControls/i18n/

@@ -3,18 +3,18 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import HcControls
-import ".."
 
 Rectangle {
     property string name: "Step" + (indexOfStage + 1).toString()
-    property int minimumWidth: 300
+    property int minimumWidth: 250
     property int maximumWidth: 600
-    property int minimumHeight: 300
+    property int minimumHeight: 250
     property int maximumHeight: 600
-    property int indexOfPcr: 0
-    property int indexOfStage: 0
-    property int stageIndexOfPcr: 0
-    property int stageType: HcPcrHelper.pcr.pcrStageModel.get(control.stageIndexOfPcr).type
+    property int indexOfPcr: 0              //该步骤在所有步骤中的索引
+    property int indexOfStage: 0            //该步骤在该阶段中的索引
+    property int stageIndexOfPcr: 0         //该步骤所在阶段的索引
+    property var pcr: null
+    property int stageType: pcr.pcrStageModel.get(control.stageIndexOfPcr).type
     property int startTemp: 0
     property int endTemp: 0
     property int hours: 0
@@ -29,6 +29,11 @@ Rectangle {
     property bool photographable: false
     property bool running: false
 
+    id:control
+    implicitWidth: pcr ? pcr.stepWidth : 250
+    implicitHeight: pcr ? pcr.stepHeight : 670
+    border.color: HcTheme.dark ?  Constants.tempStageDeepBorderColor : Constants.tempStageBorderColor
+    color: HcTheme.dark ?  Constants.tempMainDeepBackground : Constants.tempMainBackground
     function setWidth(width) {
         if (width < control.minimumWidth) {
             control.width = control.minimumWidth
@@ -51,11 +56,11 @@ Rectangle {
 
     function updateEndTemp() {
         control.endTemp = parseFloat(tempText.getText())
-        HcPcrHelper.pcr.updateStepEndTemp(control.stageIndexOfPcr, control.indexOfStage, control.endTemp)
+        pcr.updateStepEndTemp(control.stageIndexOfPcr, control.indexOfStage, control.endTemp)
     }
 
     function calHeight(temp, item) {
-        var ratio = temp / HcPcrHelper.pcr.maxTemp
+        var ratio = temp / pcr.maxTemp
 
         return item.height * ratio
     }
@@ -78,26 +83,19 @@ Rectangle {
         }
     }
 
-    id:control
-    implicitWidth: HcPcrHelper.pcr? HcPcrHelper.pcr.stepWidth : 300
-    implicitHeight: HcPcrHelper.pcr? HcPcrHelper.pcr.stepHeight : 720
-//    border.color: "black"
-//    border.width: 1
-    color: "#2D3131"
-
-    // 上面四分之一区显示step名&功能按键，如添加、删除、拍照等
+    //上面四分之一区显示step名&功能按键，如添加、删除、拍照等
     component IconButton: Rectangle {
         property string src: ""
         signal clicked()
 
-        width: 30
+        width: 25
         height: width
         radius: width/2
-        color: "#505454"
+        color: HcTheme.dark ?  Constants.tempBtnDeepBackground : Constants.tempBtnBackground
 
         Item {
-            width: 16
-            height: 16
+            width: 13
+            height: 13
             anchors.centerIn: parent
 
             HcSvgImage {
@@ -105,13 +103,6 @@ Rectangle {
                 source: parent.parent.src
             }
         }
-//        Image {
-//            source: parent.src
-//            width: parent.width * 3/4
-//            height: parent.height * 3/4
-//            fillMode: Image.Pad
-//            anchors.centerIn: parent
-//        }
 
         MouseArea {
             anchors.fill: parent
@@ -121,42 +112,23 @@ Rectangle {
         }
     }
 
+    //右侧四个按钮
     component IconButtons: Column {
-        spacing: 10
-        visible: HcPcrHelper.pcr.editable
-
+        spacing: 8
+        visible: pcr.editable
         Row {
-            spacing: 10
+            spacing: 8
             anchors.right: parent.right
-
+            //删除步骤按钮
             IconButton {
                 id: delBtn
                 src: "../../Icon/btn_delete.svg"
                 visible: control.indexOfStage === 0 ? false : true
                 onClicked: {
-                    HcPcrHelper.pcr.removeStep(control.stageIndexOfPcr, control.indexOfStage)
+                    pcr.removeStep(control.stageIndexOfPcr, control.indexOfStage)
                 }
             }
-            IconButton {
-                id: addBtn
-                src: "../../Icon/btn_add.svg"
-                visible: stageType > HcPcrHelper.StageType.PrePcr && stageType < HcPcrHelper.StageType.PostPcr
-                onClicked: {
-                    var obj = HcPcrHelper.createPcrStepObj({
-                            startTemp: HcPcrHelper.pcr.roomTemp,
-                            endTemp: HcPcrHelper.pcr.roomTemp,
-                            indexOfStage: control.indexOfStage + 1,
-                            indexOfPcr: control.indexOfPcr + 1,
-                            stageIndexOfPcr: control.stageIndexOfPcr
-                        })
-
-                    HcPcrHelper.pcr.insertStep(control.stageIndexOfPcr, control.indexOfStage + 1, obj)
-                }
-            }
-        }
-        Row {
-            spacing: 10
-
+            //设置按钮
             IconButton {
                 id: settingBtn
                 src: "../../Icon/btn_set.svg"
@@ -166,6 +138,8 @@ Rectangle {
                     gradientPopup.open()
                 }
             }
+
+            //拍照按钮
             IconButton {
                 id: photoBtn
                 src: control.photographable ? "../../Icon/btn_photo_select.svg" : "../../Icon/btn_photo.svg"
@@ -181,8 +155,8 @@ Rectangle {
 
     component TextEditLine: Rectangle {
         property string content: ""
-        property color greyColor: "#D9D9D9"
-        property color normalColor: "#DFDFDF"
+        property color notEditColor: "transparent"
+        property color normalColor: "#FFFFFF"
 
         signal editingFinished()
 
@@ -190,27 +164,37 @@ Rectangle {
             return textInput.text
         }
 
-        color: HcPcrHelper.pcr.editable ? normalColor : greyColor
+        color: pcr.editable ? normalColor : notEditColor
         width: textInput.width + 10
-        height: 30
+        height: 25
 
         TextInput {
             id: textInput
             width: contentWidth
-            height: 30
+            height: 25
             text: parent.content
-            font.pixelSize: 14
+            font.pixelSize: 12
             color: "#484848"
             anchors.centerIn: parent
-//            padding: 5
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            enabled: HcPcrHelper.pcr.editable
-
+            visible: pcr.editable
             onEditingFinished: { parent.editingFinished() }
+        }
+        HcText {
+            id: tmpText
+            width: contentWidth
+            height: 25
+            text: parent.content
+            anchors.centerIn: parent
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: 12
+            visible: !pcr.editable
         }
     }
 
+    //设置弹窗中的选项
     component LabelTextEditLine: Row {
         property string label: ""
         property string content: ""
@@ -220,10 +204,11 @@ Rectangle {
             height: parent.height
             text: parent.label
             color: "#484848"
-            font.pixelSize: 16
+            font.pixelSize: 13
             horizontalAlignment: Text.AlignRight
             verticalAlignment: Text.AlignVCenter
         }
+
         Rectangle {
             width: parent.width * 3/4
             height: parent.height
@@ -235,7 +220,7 @@ Rectangle {
                 width: parent.width
                 height: parent.height
                 text: ""
-                font.pixelSize: 14
+                font.pixelSize: 12
                 color: "#484848"
                 anchors.centerIn: parent
                 horizontalAlignment: Text.AlignLeft
@@ -248,15 +233,14 @@ Rectangle {
             }
         }
     }
-    HcPopup {
-        id: gradientPopup
-        width: 600
-        height: 400
-        title: qsTr("Gradient Setting")
-        headerFontSize: 16
-        modal: true
-        parent: Overlay.overlay
 
+    //设置弹窗
+    HcContentPopup {
+        id: gradientPopup
+        width: 400
+        height: 300
+        title: qsTr("更多设置")
+        headerFontSize: 16
         Column {
             spacing: 10
             anchors.centerIn: parent
@@ -268,27 +252,34 @@ Rectangle {
                 height: 30
                 label: qsTr("Start Cycle: ")
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: false
             }
+
             LabelTextEditLine {
                 id: cyclesInput
                 width: 400
                 height: 30
                 label: qsTr("Cycles: ")
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: false
             }
+
             LabelTextEditLine {
                 id: startTempInput
                 width: 400
                 height: 30
                 label: qsTr("Start Temperature: ")
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: false
             }
+
             LabelTextEditLine {
                 id: gradientTempInput
                 width: 400
                 height: 30
                 label: qsTr("Gradient Temperature: ")
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: false
             }
             CheckBox {
                 id: enableGradientCheckBox
@@ -300,24 +291,52 @@ Rectangle {
                 palette.text: "#5E5E5E"
                 palette.windowText: "#484848"
                 anchors.horizontalCenter: parent.horizontalCenter
-
+                visible: false
                 onClicked: {
-                    enableGradientCheckBox.checkState = enableGradientCheckBox.checkState === Qt.Unchecked ? Qt.Checked : Qt.Unchecked
+                    enableGradientCheckBox.checkState = enableGradientCheckBox.checkState === Qt.Checked ? Qt.Checked : Qt.Unchecked
                 }
             }
-            Item {width: 1; height: 10}
+            LabelTextEditLine {
+                id: ramp
+                width: 250
+                height: 30
+                label: qsTr("变温速率: ")
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+            LabelTextEditLine {
+                id: temperatureChange
+                width: 250
+                height: 30
+                label: qsTr("梯度升降温: ")
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+            Item {width: 1; height: 50}
+
             Row {
                 spacing: 100
                 anchors.horizontalCenter: parent.horizontalCenter
+                //Cancel按钮
+                HcButton {
+                    width: 60
+                    height: 30
+                    text: qsTr("Cancel")
+                    font.pixelSize: 16
+                    fontColor: "#484848"
+                    buttonColor: confirmBtn.buttonColor
 
+                    onClicked: {
+                        gradientPopup.close()
+                    }
+                }
+                //ok按钮
                 HcButton {
                     id: confirmBtn
                     width: 60
                     height: 30
                     text: qsTr("OK")
                     font.pixelSize: 16
-                    fontNormolColor: "#484848"
-                    buttonNormolGradient: Gradient {
+                    fontColor: "#484848"
+                    buttonColor: Gradient {
                         GradientStop {
                             position: 0
                             color: "#DFDEDE"
@@ -339,103 +358,101 @@ Rectangle {
                         gradientPopup.close()
                     }
                 }
-                HcButton {
-                    width: 60
-                    height: 30
-                    text: qsTr("Cancel")
-                    font.pixelSize: 16
-                    fontNormolColor: "#484848"
-                    buttonNormolGradient: confirmBtn.bgGradient
-
-                    onClicked: {
-                        gradientPopup.close()
-                    }
-                }
             }
         }
     }
+    /************************开始绘制页面*************************/
 
+
+    //添加上一个步骤按钮
     IconButton {
         id: leftAddBtn
-//        height: 80
-        anchors.top: parent.top
-        anchors.topMargin: 20
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 10
         anchors.left: parent.left
         anchors.leftMargin: 10
         src: "../../Icon/btn_add.svg"
-        visible: HcPcrHelper.pcr.editable &&
+        visible: pcr.editable &&
                  stageType > HcPcrHelper.StageType.PrePcr &&
                  stageType < HcPcrHelper.StageType.PostPcr
 
         onClicked: {
             var obj = HcPcrHelper.createPcrStepObj({
-                    startTemp: HcPcrHelper.pcr.roomTemp,
-                    endTemp: HcPcrHelper.pcr.roomTemp,
+                    startTemp: pcr.roomTemp,
+                    endTemp: pcr.roomTemp,
                     indexOfStage: control.indexOfStage,
                     indexOfPcr: control.indexOfPcr,
-                    stageIndexOfPcr: control.stageIndexOfPcr
+                    stageIndexOfPcr: control.stageIndexOfPcr,
+                    pcr: control.pcr
                 })
 
-            HcPcrHelper.pcr.insertStep(control.stageIndexOfPcr, control.indexOfStage, obj)
+            pcr.insertStep(control.stageIndexOfPcr, control.indexOfStage, obj)
         }
     }
+
+    //增加步骤按钮
+    IconButton {
+        id: addBtn
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 10
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        src: "../../Icon/btn_add.svg"
+        visible: pcr.editable && stageType > HcPcrHelper.StageType.PrePcr && stageType < HcPcrHelper.StageType.PostPcr
+        onClicked: {
+            var obj = HcPcrHelper.createPcrStepObj({
+                                                       startTemp: pcr.roomTemp,
+                                                       endTemp: pcr.roomTemp,
+                                                       indexOfStage: control.indexOfStage + 1,
+                                                       indexOfPcr: control.indexOfPcr + 1,
+                                                       stageIndexOfPcr: control.stageIndexOfPcr,
+                                                       pcr: control.pcr
+                                                   })
+
+            pcr.insertStep(control.stageIndexOfPcr, control.indexOfStage + 1, obj)
+        }
+    }
+
     // 名称
-    Label {
+    HcText {
         id: label
         anchors.top: parent.top
-        anchors.topMargin: 20
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: 10 + leftAddBtn.width + (btns.x - (leftAddBtn.x + leftAddBtn.width) - control.width) / 2
-        anchors.verticalCenter: leftAddBtn.verticalCenter
-//        anchors.left: parent.left
-//        anchors.leftMargin: 20
+        anchors.topMargin: 10
+        anchors.left: parent.left
+        anchors.leftMargin: 10
         text: control.name
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        color: "#DFDFDF"/*"white"*/
-        font.pixelSize: 16
-        MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            hoverEnabled: true
-
-            onEntered: toolTip.visible = true
-            onExited: toolTip.visible = false
-        }
-
-        ToolTip {
-            id: toolTip
-            visible: false
-            text: control.name
-        }
+        font.pixelSize: 13
     }
+
     // 功能按键
     IconButtons {
         id: btns
-        height: 80
+        height: 45
         anchors.top: parent.top
-        anchors.topMargin: 20
+        anchors.topMargin: 10
         anchors.right: parent.right
         anchors.rightMargin: 10
     }
+
+    //曲线曲线框
     Rectangle {
         id: canvasRect
         width: parent.width
-        height: parent.height - Math.max(label.height, btns.height) - 80
+        height: parent.height - Math.max(label.height, btns.height) - 40    //这里是为了给温度编辑框留出空间
         color: "transparent"
-        anchors.bottom: parent.bottom
-
+        //anchors.bottom: parent.bottom
+        anchors.bottom: bottomRect.top
         Canvas {
             id: canvas
             anchors.fill: parent
             onPaint: {
-    //            console.log("repaint event has received, index = ", control.indexOfStage, ", control.startTemp = ", control.startTemp, ", control.endTemp = ", control.endTemp)
-
                 var ctx = getContext("2d")
 
                 ctx.clearRect(0, 0, parent.width, parent.height)
-                ctx.strokeStyle = running ? "#EE9F05" : "#0DBECC"
-                ctx.fillStyle = running ? "#59523C" : "#28484A"
+                ctx.strokeStyle = Constants.tempLineColor
+                ctx.fillStyle = Constants.tempfillColor
 //                ctx.globalAlpha = 0.5
                 ctx.lineWidth = 2
 
@@ -472,42 +489,58 @@ Rectangle {
                 }
             }
         }
+
         // 温度编辑框
         Row {
-            x: parent.width * 1/2
-            y: Math.min(parent.height - getTempLineHeight() - 40, parent.height - 80)
+            x: parent.width * 1/2 - 20
+            y: Math.min(parent.height - getTempLineHeight() - 30, parent.height - 70)
 
             TextEditLine {
                 id: tempText
-                width: /*textInput.width*/children[0].contentWidth + 20 // 测试是否可行
-                height: 30
+                width: children[0].contentWidth + 15
+                height: 22
                 content: control.endTemp
                 onEditingFinished: {
                     updateEndTemp()
                 }
             }
-            Rectangle {
-                color: "#C1C1C1"
-                width: tempUnitText.width + 10
-                height: 30
 
-                Text {
+            Rectangle {
+                color: pcr.editable ? "#E4E4E4" : "transparent"
+                width: tempUnitText.width + 8
+                height: 22
+
+                HcText {
                     id: tempUnitText
                     width: contentWidth
-                    height: 30
+                    height: 22
                     text: "℃"
-                    font.pixelSize: 16
-                    color: "#484848"
+                    font.pixelSize: 12
                     anchors.centerIn: parent
                     padding: 5
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
+                    visible: !pcr.editable
+                }
+                Text {
+                    id: tempUnitText1
+                    width: contentWidth
+                    height: 22
+                    text: "℃"
+                    font.pixelSize: 12
+                    anchors.centerIn: parent
+                    padding: 5
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    color: "#484848"
+                    visible: pcr.editable
                 }
             }
         }
+
         // 温度保持时间
         Row {
-            x: parent.width * 1/2
+            x: parent.width * 1/2  - 20
             y: Math.min(parent.height - getTempLineHeight() + 10, parent.height - 40)
             visible: stageType !== HcPcrHelper.StageType.Infinite
 
@@ -516,13 +549,12 @@ Rectangle {
                 content: control.hours.toString().padStart(2, "0")
                 onEditingFinished: {
                     control.hours = parseInt(hoursText.getText())
-                    HcPcrHelper.pcr.updateStepHours(control.stageIndexOfPcr, control.indexOfStage, control.hours)
+                    pcr.updateStepHours(control.stageIndexOfPcr, control.indexOfStage, control.hours)
                 }
             }
-            Label {
+            HcText {
                 text: ":"
-                font.pixelSize: 16
-                color: "white"/*"#D9D9D9"*/
+                font.pixelSize: 13
                 padding: 5
             }
             TextEditLine {
@@ -530,13 +562,12 @@ Rectangle {
                 content: control.minutes.toString().padStart(2, "0")
                 onEditingFinished: {
                     control.minutes = parseInt(minutesText.getText())
-                    HcPcrHelper.pcr.updateStepMinutes(control.stageIndexOfPcr, control.indexOfStage, control.minutes)
+                    pcr.updateStepMinutes(control.stageIndexOfPcr, control.indexOfStage, control.minutes)
                 }
             }
-            Label {
+            HcText {
                 text: ":"
-                font.pixelSize: 16
-                color: "white"/*"#D9D9D9"*/
+                font.pixelSize: 13
                 padding: 5
             }
             TextEditLine {
@@ -544,25 +575,33 @@ Rectangle {
                 content: control.seconds.toString().padStart(2, "0")
                 onEditingFinished: {
                     control.seconds = parseInt(secondsText.getText())
-                    HcPcrHelper.pcr.updateStepSeconds(control.stageIndexOfPcr, control.indexOfStage, control.seconds)
+                    pcr.updateStepSeconds(control.stageIndexOfPcr, control.indexOfStage, control.seconds)
                 }
             }
         }
+
         // 变温速率
-        Label {
+        HcText{
             id: tempRatioLabel
             x: parent.width/8
             y: Math.min(parent.height - getTempLineHeight()/2, parent.height - 40)
             text: getTempRatio().toFixed(2) + "℃/s"
-            color: "white"/*"#484848"*/
-            font.pixelSize: 16
+            font.pixelSize: 13
             visible: control.startTemp != control.endTemp
         }
+    }
+    Rectangle {
+        id: bottomRect
+        width: parent.width
+        height: 15
+        anchors.bottom: parent.bottom
+        color: Constants.tempfillColor
     }
 
     // 绘制边界
     Canvas {
         anchors.fill: parent
+        visible: false
         onPaint: {
             var ctx = getContext("2d")
 
@@ -603,18 +642,16 @@ Rectangle {
     }
 
     Connections {
-        target: HcPcrHelper
-        onMaxTempChanged: (maxTemp) => {
-//           console.log("stage index =", control.stageIndexOfPcr, ", step index =", control.indexOfStage,
-//                       ", max temprature changed, temperatue =", maxTemp, ", repaint window imminently.")
+        target: HcPcr
+        function onMaxTempChanged(maxTemp) {
            canvas.requestPaint()
            control.update()
         }
     }
 
     Connections {
-        target: HcPcrHelper
-        onStageTypeChanged: (index, type) => {
+        target: HcPcr
+        function onStageTypeChanged(index, type) {
             if (control.stageIndexOfPcr === index) {
                 stageType = type
             }
@@ -622,10 +659,9 @@ Rectangle {
     }
 
     Connections {
-        target: HcPcrHelper
-        onRunStepChanged: (stageIndex, stepIndex) => {
+        target: HcPcr
+        function onRunStepChanged(stageIndex, stepIndex) {
             var lastState = control.running
-
             if (stageIndex === control.stageIndexOfPcr && stepIndex === control.indexOfStage) {
                 control.running = true
             } else {

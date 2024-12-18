@@ -1,23 +1,24 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
-
+import QtQuick.Layouts
 import HcControls
 
 Rectangle {
-    property int stepWidth: 250                         // step宽度
-    property int stepHeight: 350                        // step高度
+    property int stepWidth: 200                         // step宽度
+    property int stepHeight: 300                        // step高度
     property int roomTemp: 25                           // 室温，添加第一个pcrStep时设置初始温度
     property int maxTemp: 100                           // 最高温度，用于计算温度线高度
     property double coefficient: 1.0                    // 温度系数，用于计算最高温度
     property bool preRead: false                        // 包含Pre-PCR
     property bool postRead: false                       // 包含Post-PCR
-    property double reactVol: 10                         // 反应体积
-    property double lidTemp: 105                         // 热盖温度
-//    property bool isDark: true                        // 深色模式
-    property bool editable: true                        // 能否编辑方案
+    property double reactVol: 10                        // 反应体积
+    property double lidTemp: 105                        // 热盖温度
+    property bool editable: false                        // 能否编辑方案
     property var pcrStageArr: []                        // pcrstage数组，添加引用，防止对象被回收
     property ListModel pcrStageModel: ListModel{}       // pcrstage数据
+    property string deviceName: ""                      // PCR设备名称
+    property int deviceCanId: -1                        // PCR设备Id
 
 
     function updateStageCycles(index, cycles) {
@@ -75,13 +76,13 @@ Rectangle {
         control.pcrStageModel.insert(index, stageObj)
         control.pcrStageArr.splice(index, 0, stageObj)
 
-        // 更新索引
+        // 更新stage的索引
         for (var i = index + 1; i < control.pcrStageModel.count; i++) {
             var stage = control.pcrStageModel.get(i)
 
             stage.indexOfPcr++
 
-            // 更新Step的索引，添加stage时，默认会增加一个step，indexOfPcr会增加，所以这里只需要增加stageIndexOfPcr
+            // 更新每一个stage中的Step索引，添加stage时，默认会增加一个step，indexOfPcr会增加，所以这里只需要增加stageIndexOfPcr
             for (var j = 0; j < stage.pcrStepModel.count; j++) {
                 var step = stage.pcrStepModel.get(j)
 
@@ -246,6 +247,7 @@ Rectangle {
                                 gradientStartCycle: delObj.gradientStartCycle,
                                 gradientCycles: delObj.gradientCycles,
                                 photographable: delObj.photographable,
+                                pcr: control
                             })
 
                 stepModel.remove(stepIndex)
@@ -306,9 +308,11 @@ Rectangle {
     function insertStep(stageIndex, stepIndex, stepObj) {
         var stage = control.pcrStageModel.get(stageIndex)
         var preStep = findPreStep(stageIndex, stepIndex)
+
+        //指的是未插入时，该位置的下一个节点，所以要-1
         var nextStep = findNextStep(stageIndex, stepIndex - 1)
 
-        if (!stage || (stepIndex !== 0 && stepIndex/* + 1*/ > stage.pcrStepModel.count)) {
+        if (!stage || (stepIndex !== 0 && stepIndex > stage.pcrStepModel.count)) {
             console.log("stage = ", stage, ", stepIndex = ", stepIndex, ", stage.pcrStepModel.count = ", stage.pcrStepModel.count)
             return
         }
@@ -414,6 +418,7 @@ Rectangle {
         return messure
     }
 
+    //加载模板
     function loadTemplate(file) {
         // 查找索引号最小的stage
         function findMinIndex(arr) {
@@ -459,7 +464,8 @@ Rectangle {
                             gradientStartTemp: step.gradientStartTemp,
                             gradientStartCycle: step.gradientStartCycle,
                             gradientCycles: step.gradientCycles,
-                            photographable: control.pcrStageModel.get(stageIndex).type === HcPcrHelper.StageType.PostPcr ? true : step.photographable
+                            photographable: control.pcrStageModel.get(stageIndex).type === HcPcrHelper.StageType.PostPcr ? true : step.photographable,
+                            pcr: control
                         })
 
             insertStep(stageIndex, stepIndex, newStep)
@@ -469,6 +475,8 @@ Rectangle {
             var newStage = HcPcrHelper.createPcrStageObj({
                             indexOfPcr: stage.index,
                             cycles: stage.cycles,
+                            deviceCanId: control.deviceCanId,
+                            pcr: control,
                             type: stage.type
                         })
 
@@ -528,6 +536,7 @@ Rectangle {
         }
     }
 
+    //保存模板
     function saveTemplate(file) {
         var obj = {pcr: {}}
 
@@ -573,14 +582,15 @@ Rectangle {
         HcFileOp.writeAll(file, JSON.stringify(obj, null, "\t"))
     }
 
+    //转为RDML结构
     function toRdml() {
-        var jsonStr = "{\n\t\"thermalCyclingConditions\": {\n\t\t"
+        var jsonStr = "{\"thermalCyclingConditions\": [{"
         var nr = 1
 
-        jsonStr += "\"id\": \"\"" + "," + "\n\t\t"
-        jsonStr += "\"lidTemperature\": " + control.lidTemp + "," + "\n\t\t"
-        jsonStr += "\"reactVolume\": " + control.reactVol + "," + "\n\t\t"
-        jsonStr += "\"step\": " + "[\n\t\t\t{\n\t\t\t\t"
+        jsonStr += "\"id\": \"\"" + ","
+        jsonStr += "\"lidTemperature\": " + control.lidTemp + ","
+        jsonStr += "\"reactVolume\": " + control.reactVol + ","
+        jsonStr += "\"step\": " + "[{"
 
         for (var i = 0; i < control.pcrStageModel.count; i++) {
             var stage = control.pcrStageModel.get(i)
@@ -590,25 +600,25 @@ Rectangle {
                 for (var j = 0; j < stage.pcrStepModel.count; j++) {
                     var step = stage.pcrStepModel.get(j)
 
-                    jsonStr += "\"nr\": " + nr + "," + "\n\t\t\t\t"
-                    jsonStr += "\"description\": " + getDescription(i, j, stage.type) + "," + "\n\t\t\t\t"
-                    jsonStr += "\"temperature\": " + "{\n\t\t\t\t\t"
-                    jsonStr += "\"temperature\": " + step.endTemp + "," + "\n\t\t\t\t\t"
-                    jsonStr += "\"duration\": " + getSeconds(step.hours, step.minutes, step.seconds, stage.type) + "," + "\n\t\t\t\t\t"
-                    jsonStr += "\"temperatureChange\": " + 0 + "," + "\n\t\t\t\t\t"
-                    jsonStr += "\"durationChange\": " + 0 + "," + "\n\t\t\t\t\t"
-                    jsonStr += "\"measure\": " + getMessure(step.photographable, stage.type) + "," + "\n\t\t\t\t\t"
-                    jsonStr += "\"ramp\": " + step.ratio + "\n\t\t\t\t}"
-                    jsonStr += "\n\t\t\t},\n\t\t\t{\n\t\t\t\t"
+                    jsonStr += "\"nr\": " + nr + ","
+                    jsonStr += "\"description\": \"" + getDescription(i, j, stage.type) + "\","
+                    jsonStr += "\"temperature\": " + "{"
+                    jsonStr += "\"temperature\": " + step.endTemp + ","
+                    jsonStr += "\"duration\": " + getSeconds(step.hours, step.minutes, step.seconds, stage.type) + ","
+                    jsonStr += "\"temperatureChange\": " + 0 + ","
+                    jsonStr += "\"durationChange\": " + 0 + ","
+                    jsonStr += "\"measure\": \"" + getMessure(step.photographable, stage.type) + "\","
+                    jsonStr += "\"ramp\": " + step.ratio + "}"
+                    jsonStr += "},{"
 
                     nr++
                 }
 
                 if (repeat >= 0) {
-                    jsonStr += "\"nr\": " + nr + "," + "\n\t\t\t\t"
-                    jsonStr += "\"loop\": " + "{\n\t\t\t\t\t"
-                    jsonStr += "\"goto\": " + (nr - stage.pcrStepModel.count) + "," + "\n\t\t\t\t\t"
-                    jsonStr += "\"repeat\": " + repeat + "\n\t\t\t\t}"
+                    jsonStr += "\"nr\": " + nr + ","
+                    jsonStr += "\"loop\": " + "{"
+                    jsonStr += "\"goto\": " + (nr - stage.pcrStepModel.count) + ","
+                    jsonStr += "\"repeat\": " + repeat + "}"
 
                     nr++
                 } else {
@@ -618,41 +628,105 @@ Rectangle {
 
             if (i < control.pcrStageModel.count - 1) {
                 if (control.pcrStageModel.get(i + 1).pcrStepModel.count > 0) {
-                    jsonStr += "\n\t\t\t},\n\t\t\t{\n\t\t\t\t"
+                    jsonStr += "},{"
                 } else {
                     continue
                 }
 
             } else {
-                jsonStr += "\n\t\t\t}\n\t\t]\n\t}"
+                jsonStr += "}]}]"
             }
         }
 
-        jsonStr += "\n}"
+        jsonStr += "}"
 
         return jsonStr
     }
 
     id: control
-    implicitWidth: parent.width/*1500*/
-    implicitHeight: parent.height/*720*/
-    color: "#9EA1A1"
-
+    implicitWidth: parent.width
+    implicitHeight: parent.height
+    color: HcTheme.dark ?  Constants.tempFrameDeepBackground : Constants.tempFrameBackground
+    border.color: HcTheme.dark ?  Constants.tempFrameDeepBorderColor : Constants.tempFrameBorderColor
+    //这一栏的组件根据项目不同要求来进行修改
+    Row{
+        id: _input1
+        anchors.top: parent.top
+        anchors.topMargin: 10
+        anchors.left: parent.left
+        anchors.leftMargin: 10
+        spacing: 10
+        HcText{
+            text: qsTr("<font color='red'>*</font>反应体系:")
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+        HcTextBox{
+            placeholderText: ""
+            anchors.verticalCenter: parent.verticalCenter
+            level: 3
+            validator: RegularExpressionValidator {
+                regularExpression: RegExp("^(3[0]([.]0{1,2})?|[3-9]([.][0-9]{1,2})?|[1-2][0-9]([.][0-9]{1,2})?)$")
+            }
+        }
+        HcText{
+            text: qsTr("ul(3~30)")
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+    Row{
+        id: _input2
+        anchors.top: parent.top
+        anchors.topMargin: 10
+        anchors.left: _input1.right
+        anchors.leftMargin: 30
+        spacing: 10
+        CheckBox {
+            id: _lidTempCheckBox
+            width: 90
+            height: 30
+            checkState: Qt.Unchecked
+            text: qsTr("热盖温度:")
+            font.pixelSize: 14
+            palette.text: "#5E5E5E"
+            palette.windowText: HcTheme.fontPrimaryColor
+            indicator.width: 20
+            indicator.height: 20
+            onClicked: {
+                if(!checked){
+                    _lidTempText.clear()
+                }
+            }
+        }
+        HcTextBox{
+            id: _lidTempText
+            placeholderText: ""
+            anchors.verticalCenter: parent.verticalCenter
+            level: 3
+            disabled: !_lidTempCheckBox.checked
+            validator: RegularExpressionValidator { regularExpression: RegExp("^(1[5-9]|[2-9][0-9]|10[0-5])([.][0-9]{1,2})?$") }
+        }
+        HcText{
+            text: qsTr("℃(15~105)")
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
     Row {
         anchors.top: parent.top
-        anchors.topMargin: 20
+        anchors.topMargin: 10
         anchors.right: parent.right
-        anchors.rightMargin: 30
+        anchors.rightMargin: 100
         spacing: 20
-
         CheckBox {
             width: 90
             height: 30
             checkState: Qt.Unchecked
             text: "Pre-Read"
             font.pixelSize: 14
-            palette.text: /*"red"*/"#5E5E5E"
-            palette.windowText: /*"white"*/"#DFDFDF"
+            palette.text: "#5E5E5E"
+            palette.windowText: HcTheme.fontPrimaryColor
             indicator.width: 20
             indicator.height: 20
 
@@ -660,14 +734,15 @@ Rectangle {
                 control.preRead = !control.preRead
             }
         }
+
         CheckBox {
             width: 90
             height: 30
             checkState: Qt.Unchecked
             text: "Post-Read"
             font.pixelSize: 14
-            palette.text: /*"red"*/"#5E5E5E"
-            palette.windowText: /*"white"*/"#DFDFDF"
+            palette.text: "#5E5E5E"
+            palette.windowText: HcTheme.fontPrimaryColor
 
             onClicked: {
                 control.postRead = !control.postRead
@@ -681,22 +756,18 @@ Rectangle {
         height: parent.height - 50
         model: control.pcrStageModel
         clip: true
-        orientation: ListView.Horizontal
-        interactive: false
-        cacheBuffer: 10
+        orientation: ListView.Horizontal        //水平排列
+        cacheBuffer: listView.width * 2         //提高滚动的流畅性
         anchors.top: parent.top
         anchors.topMargin: 50
         anchors.left: parent.left
-
         delegate: HcPcrStage {
             indexOfPcr: model.indexOfPcr
             cycles: model.cycles
             type: model.type
+            pcr: model.pcr
         }
-
-        ScrollBar.horizontal: ScrollBar {
-            policy: listView.contentWidth > listView.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
-        }
+        ScrollBar.horizontal: HcScrollBar{}
     }
 
     onPreReadChanged: {
@@ -704,6 +775,8 @@ Rectangle {
             var stage = HcPcrHelper.createPcrStageObj({
                             indexOfPcr: 0,
                             cycles: 1,
+                            deviceCanId: control.deviceCanId,
+                            pcr: control,
                             type: HcPcrHelper.StageType.PrePcr
                         })
 
@@ -724,11 +797,15 @@ Rectangle {
             var postStage = HcPcrHelper.createPcrStageObj({
                             indexOfPcr: cnt,
                             cycles: 1,
+                            deviceCanId: control.deviceCanId,
+                            pcr: control,
                             type: HcPcrHelper.StageType.PostPcr
                         })
             var infiniteStage = HcPcrHelper.createPcrStageObj({
                             indexOfPcr: cnt + 1,
                             cycles: 1,
+                            deviceCanId: control.deviceCanId,
+                            pcr: control,
                             type: HcPcrHelper.StageType.Infinite
                         })
 
@@ -751,13 +828,16 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        HcPcrHelper.pcr = control
 
-        // 添加第一个缺省元素
+        //在其他控件中可以通过 HcPcrHelper.getPcrByCanId 访问到该 HcPcr
+        HcPcrHelper.setValueByKey(control.deviceCanId, control)
+
         if (control.pcrStageModel.count === 0) {
             var stage = HcPcrHelper.createPcrStageObj({
                             indexOfPcr: 0,
                             cycles: 1,
+                            deviceCanId: control.deviceCanId,
+                            pcr: control,
                             type: HcPcrHelper.StageType.Pcr
                         })
 

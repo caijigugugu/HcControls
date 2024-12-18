@@ -44,7 +44,8 @@ Window {
             icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
             subMenus: [
                 { "title": qsTr("弹窗"), "icon": "", "qmlPath": "./window/HcDialogWindow.qml" },
-                { "title": qsTr("菜单栏"), "icon": "", "qmlPath": "./window/HcMenuWindow.qml" }
+                { "title": qsTr("菜单栏"), "icon": "", "qmlPath": "./window/HcMenuWindow.qml" },
+                { "title": qsTr("抽屉"), "icon": "", "qmlPath": "./window/HcSheetWindow.qml" }
             ]
         });
         menuModel.append({

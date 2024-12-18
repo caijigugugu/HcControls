@@ -10,8 +10,15 @@ Rectangle {
     property string name: "Stage" + (indexOfPcr + 1).toString()
     property int indexOfPcr: 0
     property int cycles: 1
+    property int deviceCanId: -1
+    property var pcr: null
     property int type: HcPcrHelper.StageType.Pcr
     property bool updateType: false
+    property var actionModel: ListModel {
+        ListElement { key: "Hold"; value: 1 }
+        ListElement { key: "PCR"; value: 2 }
+        ListElement { key: "Infinite"; value: 4 }
+    }
 
     function getName(type) {
         var name = ""
@@ -44,11 +51,13 @@ Rectangle {
         var stepWidth = 300
         var cnt = 1
 
-        if (HcPcrHelper.pcr) {
-            stepWidth = HcPcrHelper.pcr.stepWidth
-            var stage = HcPcrHelper.pcr.pcrStageModel.get(control.indexOfPcr)
+        if (pcr) {
+            stepWidth = pcr.stepWidth
+            var stage = pcr.pcrStageModel.get(control.indexOfPcr)
 
             if (stage) {
+
+                //获取该阶段中的步骤数量，并计算组件的宽度
                 cnt = stage.pcrStepModel.count
                 width = stepWidth * cnt + (cnt - 1) * listView.spacing
             }
@@ -59,7 +68,7 @@ Rectangle {
 
     id:control
     implicitWidth: getWidth()
-    implicitHeight: HcPcrHelper.pcr.stepHeight + 130
+    implicitHeight: pcr.stepHeight + 80
 
     component IconButton: Rectangle {
         property string src: ""
@@ -68,6 +77,7 @@ Rectangle {
         implicitWidth: 20
         implicitHeight: width
         color: "transparent"
+        visible: false
 
         HcSvgImage {
             anchors.fill: parent
@@ -82,212 +92,307 @@ Rectangle {
         }
     }
 
-    component IconButtons: Row {
-        spacing: 10
-        visible: HcPcrHelper.pcr.editable
-
-        IconButton {
-            src: "../../Icon/btn_delete.svg"
-            visible: control.indexOfPcr === 0 ? false : true
-            onClicked: {
-                HcPcrHelper.pcr.removeStage(control.indexOfPcr)
-            }
-        }
-        IconButton {
-            src: "../../Icon/btn_add.svg"
-            visible: control.type > HcPcrHelper.StageType.PrePcr && control.type < HcPcrHelper.StageType.PostPcr
-            onClicked: {
-                var obj = HcPcrHelper.createPcrStageObj({
-                        indexOfPcr: control.indexOfPcr + 1,
-                        cycles: 1,
-                    })
-
-                HcPcrHelper.pcr.insertStage(control.indexOfPcr + 1, obj)
-            }
-        }
-    }
+    // component IconButtons: Row {
+    //     IconButton {
+    //         src: "../../Icon/btn_delete.svg"
+    //         visible: control.indexOfPcr === 0 ? false : true
+    //         onClicked: {
+    //             pcr.removeStage(control.indexOfPcr)
+    //         }
+    //     }
+    //     IconButton {
+    //         src: "../../Icon/btn_add.svg"
+    //         //visible: control.type > HcPcrHelper.StageType.PrePcr && control.type < HcPcrHelper.StageType.PostPcr
+    //         visible: true
+    //         onClicked: {
+    //             var obj = HcPcrHelper.createPcrStageObj({
+    //                     indexOfPcr: control.indexOfPcr + 1,
+    //                     pcr: control.pcr,
+    //                     cycles: 1,
+    //                 })
+    //             pcr.insertStage(control.indexOfPcr + 1, obj)
+    //         }
+    //     }
+    // }
 
     Rectangle {
         id: topRect
         width: parent.width
-        height: 60/*100*/
+        height: 40
         anchors.top: parent.top
         border.width: 1
-        border.color: "black"
-        color: "#5E5E5E"
+        border.color: HcTheme.dark ?  Constants.tempStageDeepBorderColor : Constants.tempStageBorderColor
+        color: HcTheme.dark ?  Constants.tempStageDeepBackground : Constants.tempStageBackground
 
         RowLayout {
             anchors.fill: parent
 
             IconButton {
+                //添加上一阶段
+                id: _preBtn
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 20
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                 Layout.leftMargin: 10
                 src: "../../Icon/btn_add.svg"
-                visible: HcPcrHelper.pcr.editable &&
+                visible: pcr.editable &&
                          control.type > HcPcrHelper.StageType.PrePcr && control.type < HcPcrHelper.StageType.PostPcr
                 onClicked: {
-                    var obj = HcPcrHelper.createPcrStageObj({
-                            indexOfPcr: control.indexOfPcr,
-                            cycles: 1,
-                        })
-
-                    HcPcrHelper.pcr.insertStage(control.indexOfPcr, obj)
+                    preMenu.open()
                 }
-            }
-
-            ComboBox {
-                id: combobox
-                Layout.preferredWidth: 100
-                Layout.preferredHeight: 30
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                displayText: /*""*/getName(control.type)
-                textRole: "key"
-                model: [/*{key: "Pre-PCR", value: 0}, */{key: "Hold", value: 1}, {key: "PCR", value: 2},
-                        /*{key: "Post-PCR", value: 3},*/ {key: "Infinite", value: 4}]
-                indicator: Item{}
-                flat: true
-
-                contentItem: TextInput {
-                    width: contentWidth
-                    height: contentHeight
-                    leftPadding: 5
-                    text: combobox.displayText
-                    font.pixelSize: 16
-                    color: "#DFDFDF"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    anchors.centerIn: parent
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            updateType = true
-                            comboboxPopup.open()
+                HcMenu {
+                    id: preMenu
+                    x: -_preBtn.width
+                    y: _preBtn.height + 5
+                    width: 70
+                    Repeater {
+                        model: actionModel
+                        HcMenuItem {
+                            text: model.key
+                            onTriggered: {
+                                var obj = HcPcrHelper.createPcrStageObj({
+                                    indexOfPcr: control.indexOfPcr,
+                                    cycles: 1,
+                                    pcr: control.pcr,
+                                    deviceCanId: control.deviceCanId
+                                })
+                                pcr.insertStage(control.indexOfPcr, obj)
+                                pcr.updateStageType(control.indexOfPcr - 1, model.value)
+                            }
                         }
                     }
                 }
-                delegate: ItemDelegate {
-                    width: combobox.width
-                    highlighted: combobox.highlightedIndex === index
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                // ComboBox {
+                //     id: combobox
+                //     Layout.preferredWidth: 100
+                //     Layout.preferredHeight: 30
+                //     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                //     displayText: getName(control.type)
+                //     textRole: "key"
+                //     model: [{key: "Hold", value: 1}, {key: "PCR", value: 2}, {key: "Infinite", value: 4}]
+                //     indicator: Item{}   //没有默认的下拉箭头
+                //     flat: true          //设为扁平样式
 
-                    contentItem: Text {
-                        text: modelData.key
-                        color: "#DFDFDF"
-                        font.pixelSize: 14
-                        elide: Text.ElideRight
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle {
-                        color: combobox.highlightedIndex === index ? /*"#0DBECC"*/"#364444" : "#5E5E5E"
-                    }
+                //     //用TextInput展示当前选中项
+                //     contentItem: HcText {
+                //         width: contentWidth
+                //         height: contentHeight
+                //         leftPadding: 5
+                //         text: combobox.displayText
+                //         font.pixelSize: 13
+                //         horizontalAlignment: Text.AlignHCenter
+                //         verticalAlignment: Text.AlignVCenter
+                //         anchors.centerIn: parent
 
-                    required property int index
-                    required property var modelData
+                //         MouseArea {
+                //             anchors.fill: parent
+                //             onClicked: {
+                //                 updateType = true
+                //                 comboboxPopup.open()
+                //             }
+                //         }
+                //     }
+
+                //     //每个下拉列项
+                //     delegate: ItemDelegate {
+
+                //         required property int index
+                //         required property var modelData
+                //         width: combobox.width
+                //         highlighted: combobox.highlightedIndex === index
+
+                //         contentItem: HcText {
+                //             text: modelData.key
+                //             color: "#DFDFDF"
+                //             font.pixelSize: 14
+                //             elide: Text.ElideRight
+                //             verticalAlignment: Text.AlignVCenter
+                //         }
+                //         background: Rectangle {
+                //             color: combobox.highlightedIndex === index ? "#364444" : "#5E5E5E"
+                //         }
+                //     }
+
+                //     //整个下拉框
+                //     popup: T.Popup {
+                //         id: comboboxPopup
+                //         x: 0
+                //         y: combobox.height
+                //         width: combobox.width
+                //         height: combocontrollistView.contentHeight
+
+                //         contentItem: ListView {
+                //             id: combocontrollistView
+                //             clip: true
+                //             cacheBuffer: 10
+                //             implicitHeight: contentHeight
+                //             model: combobox.delegateModel
+                //             currentIndex: combobox.highlightedIndex
+                //             highlightMoveDuration: 0
+                //             spacing: 0
+
+                //             T.ScrollIndicator.vertical: ScrollIndicator { }
+                //         }
+                //         background: Rectangle {
+                //             color: "#5E5E5E"
+                //         }
+                //     }
+
+                //     onCurrentValueChanged: {
+                //         if (updateType) {
+                //             control.type = combobox.currentValue.value
+                //             pcr.updateStageType(control.indexOfPcr, control.type)
+                //             updateType = false
+                //         }
+                //     }
+                // }
+                HcText {
+                    width: contentWidth
+                    height: contentHeight
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    text: getName(control.type)//combobox.displayText
+                    font.pixelSize: 13
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    //anchors.centerIn: parent
+
+                    // MouseArea {
+                    //     anchors.fill: parent
+                    //     onClicked: {
+                    //         updateType = true
+                    //         comboboxPopup.open()
+                    //     }
+                    // }
                 }
-                popup: T.Popup {
-                    id: comboboxPopup
-                    x: 0
-                    y: combobox.height
-                    width: combobox.width
-                    height: combocontrollistView.contentHeight
-
-                    contentItem: ListView {
-                        id: combocontrollistView
-                        clip: true
-                        cacheBuffer: 10
-                        implicitHeight: contentHeight
-                        model: combobox.delegateModel
-                        currentIndex: combobox.highlightedIndex
-                        highlightMoveDuration: 0
-                        spacing: 0
-
-                        T.ScrollIndicator.vertical: ScrollIndicator { }
-                    }
-                    background: Rectangle {
-                        color: "#5E5E5E"
-                    }
-                }
-
-                onCurrentValueChanged: {
-                    if (updateType) {
-                        control.type = combobox.currentValue.value
-                        HcPcrHelper.pcr.updateStageType(control.indexOfPcr, control.type)
-                        updateType = false
+                IconButton {
+                    src: "../../Icon/btn_delete.svg"
+                    visible: pcr.editable //control.indexOfPcr === 0 ? false : true
+                    onClicked: {
+                        pcr.removeStage(control.indexOfPcr)
                     }
                 }
             }
-            IconButtons {
-                Layout.preferredWidth: control.indexOfPcr === 0 ? 20 : 50
+            //添加下一阶段
+            IconButton {
+                id: _nextBtn
+                Layout.preferredWidth: 20
                 Layout.preferredHeight: 20
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 Layout.rightMargin: 10
+                src: "../../Icon/btn_add.svg"
+                visible: pcr.editable && (control.type > HcPcrHelper.StageType.PrePcr && control.type < HcPcrHelper.StageType.PostPcr)
+                onClicked: {
+                    nextMenu.open()
+                }
+                HcMenu {
+                    id: nextMenu
+                    x: -_nextBtn.width
+                    y: _nextBtn.height + 5
+                    width: 70
+                    Repeater {
+                        model: actionModel
+                        HcMenuItem {
+                            text: model.key
+                            onTriggered: {
+                                var obj = HcPcrHelper.createPcrStageObj({
+                                        indexOfPcr: control.indexOfPcr + 1,
+                                        pcr: control.pcr,
+                                        cycles: 1,
+                                    })
+                                pcr.insertStage(control.indexOfPcr + 1, obj)
+                                pcr.updateStageType(control.indexOfPcr +1 , model.value)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
     Rectangle {
+        id: cyclesRect
         width: parent.width
-        height: 70
-        anchors.top: parent.top
-        anchors.topMargin: 60
+        height: 40
+        anchors.top: listView.bottom
         border.width: 1
-        border.color: "black"
-        color: "#5E5E5E"/*"blue"*/
+        border.color: HcTheme.dark ?  Constants.tempStageDeepBorderColor : Constants.tempStageBorderColor
+        color: HcTheme.dark ?  Constants.tempStageDeepBackground : Constants.tempStageBackground
 
         Row {
             anchors.centerIn: parent
-            spacing: 20
+            spacing: 10
 
-            Label {
-                text: "Cycles"
-                font.pixelSize: 16
-                color: "#DFDFDF"/*"white"*/
+            HcText {
+                text: qsTr("Cycles:")
+                font.pixelSize: 13
                 anchors.verticalCenter: parent.verticalCenter
             }
-            Rectangle {
-                width: 60
-                height: 40
-                radius: 4
-                color: "#D9D9D9"
-                anchors.verticalCenter: parent.verticalCenter
 
-                TextInput {
+            Rectangle {
+                width: 55
+                height: 30
+                radius: 3
+                color: "#FFFFFF"
+                anchors.verticalCenter: parent.verticalCenter
+                visible: pcr.editable
+                border.width: 1
+                HcTextBox{
                     id: textInput
-                    width: contentWidth
-                    height: 40
+                    anchors.fill: parent
+                    placeholderText: qsTr("")
                     text: control.cycles
-                    font.pixelSize: 14
+                    font.pixelSize: 13
                     color: "#484848"
                     anchors.centerIn: parent
                     padding: 5
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    enabled: HcPcrHelper.pcr.editable
+
+                    // 限制输入为整数
+                    validator: IntValidator {
+                        bottom: 1
+                    }
+                    onTextChanged: {
+                        // 如果内容为空或者小于 1，强制改为 1
+                        if (textInput.text === "" || parseInt(textInput.text) < 1) {
+                            textInput.text = "1"
+                        }
+                    }
 
                     onEditingFinished: {
                         control.cycles = parseInt(textInput.text)
-                        HcPcrHelper.pcr.updateStageCycles(control.indexOfPcr, control.cycles)
+                        pcr.updateStageCycles(control.indexOfPcr, control.cycles)
                     }
                 }
+            }
+            HcText {
+                width: contentWidth
+                height: 40
+                text: control.cycles
+                font.pixelSize: 13
+                padding: 5
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                visible: !pcr.editable
             }
         }
     }
 
+    //显示每个阶段中的步骤
     ListView {
         id: listView
         width: count * parent.width
-        height: parent.height - 130
-        anchors.top: parent.top
-        anchors.topMargin: 130
-        model: HcPcrHelper.pcr.pcrStageModel.get(control.indexOfPcr).pcrStepModel
+        height: parent.height - 80
+        anchors.top: topRect.bottom//cyclesRect.bottom
+        model: pcr.pcrStageModel.get(control.indexOfPcr).pcrStepModel
         orientation: ListView.Horizontal
-        interactive: false
+        //interactive: false
         cacheBuffer: 20
-
         delegate: HcPcrStep {
-            width: HcPcrHelper.pcr.stepWidth
+            width: pcr.stepWidth
             height: listView.height
             stageIndexOfPcr: model.stageIndexOfPcr
             indexOfPcr: model.indexOfPcr
@@ -304,21 +409,23 @@ Rectangle {
             gradientStartCycle: model.gradientStartCycle
             gradientCycles: model.gradientCycles
             photographable: control.type === HcPcrHelper.StageType.PostPcr ? true : model.photographable
+            pcr: model.pcr
         }
     }
 
     Component.onCompleted: {
-        if (HcPcrHelper.pcr.pcrStageModel.get(control.indexOfPcr).pcrStepModel.count === 0) {
-            var preStep = HcPcrHelper.pcr.findPreStep(control.indexOfPcr, 0)
+        if (pcr.pcrStageModel.get(control.indexOfPcr).pcrStepModel.count === 0) {
+            var preStep = pcr.findPreStep(control.indexOfPcr, 0)
             var step = HcPcrHelper.createPcrStepObj({
-                        startTemp: preStep ? preStep.endTemp : HcPcrHelper.pcr.roomTemp,
-                        endTemp: HcPcrHelper.pcr.roomTemp,
+                        startTemp: preStep ? preStep.endTemp : pcr.roomTemp,
+                        endTemp: pcr.roomTemp,
                         indexOfPcr: preStep ? preStep.indexOfPcr + 1 : 0,
                         indexOfStage: 0,
-                        stageIndexOfPcr: control.indexOfPcr
+                        stageIndexOfPcr: control.indexOfPcr,
+                        pcr: control.pcr
                     })
 
-            HcPcrHelper.pcr.appendStep(control.indexOfPcr, step)
+            pcr.appendStep(control.indexOfPcr, step)
         }
     }
 }

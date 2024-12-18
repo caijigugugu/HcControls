@@ -12,7 +12,15 @@ QtObject {
         Infinite
     }
 
-    property var pcr: null
+    property var pcrMap: ({})           //存储HcPcr类
+
+    function setValueByKey(key, value) {
+        pcrMap[String(key)] = value
+    }
+
+    function getPcrByCanId(key) {
+        return pcrMap[String(key)]
+    }
 
     property Component pcrStep: Component {
         QtObject {
@@ -32,6 +40,8 @@ QtObject {
             property int gradientStartCycle: 0
             property int gradientCycles: 0
             property bool photographable: false
+            property int deviceCanId: -1
+            property var pcr: null
         }
     }
 
@@ -40,6 +50,8 @@ QtObject {
             property string name: ""
             property int indexOfPcr: 0
             property int cycles: 0
+            property int deviceCanId: -1
+            property var pcr: null
             property int type: HcPcrHelper.StageType.Pcr
             property ListModel pcrStepModel: ListModel{}
         }
@@ -145,7 +157,6 @@ QtObject {
         }
 
         for (var propName in properties) {
-//            console.log("propName = ", propName, ", vaule = ", properties[propName])
             obj[propName] = properties[propName];
         }
 
