@@ -34,9 +34,9 @@ Window {
         // 重新添加项
         menuModel.append({
             title: qsTr("温度程序"),
-            icon: "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png",
+            icon: "收起.png",
             subMenus: [
-                { "title": qsTr("pcr"), "icon": "file:///E:/work/HcControls/qmlcontrols/HcControls/HcControls/qml/Icon/收起.png", "qmlPath": "./window/HcPcrWindow.qml" }
+                { "title": qsTr("pcr"), "icon": "/qml/Icon/收起.png", "qmlPath": "./window/HcPcrWindow.qml" }
             ]
         });
         menuModel.append({

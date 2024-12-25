@@ -676,12 +676,12 @@ Some contents...</source>
         <translation>创建路径不能为空</translation>
     </message>
     <message>
-        <location filename="src/helper/InitializrHelper.cpp" line="79"/>
+        <location filename="src/helper/InitializrHelper.cpp" line="80"/>
         <source>The path does not exist</source>
         <translation>路径不存在</translation>
     </message>
     <message>
-        <location filename="src/helper/InitializrHelper.cpp" line="85"/>
+        <location filename="src/helper/InitializrHelper.cpp" line="86"/>
         <source>%1 folder already exists</source>
         <translation>%1 目录已存在</translation>
     </message>

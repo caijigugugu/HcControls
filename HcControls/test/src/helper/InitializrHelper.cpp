@@ -74,6 +74,7 @@ void InitializrHelper::copyFile(const QString &source, const QString &dest) {
         error(tr("The creation path cannot be empty"));
         return;
     }
+    //路径检查和创建
     QDir projectRootDir(path);
     if (!projectRootDir.exists()) {
         error(tr("The path does not exist"));
@@ -86,23 +87,26 @@ void InitializrHelper::copyFile(const QString &source, const QString &dest) {
         return;
     }
     projectDir.mkpath(projectPath);
-    QDir fluentDir(projectDir.filePath("FluentUI"));
-    copyDir(QDir(QGuiApplication::applicationDirPath() + "/source"), fluentDir);
-    templateToFile(":/example/res/template/CMakeLists.txt.in",
+    //复制目录内容
+    QDir hcDir(projectDir.filePath("HcControls"));
+    copyDir(QDir(QGuiApplication::applicationDirPath() + "/source"), hcDir);
+    //生成模板文件
+    templateToFile(":/test/res/template/CMakeLists.txt.in",
                    projectDir.filePath("CMakeLists.txt"), name);
-    templateToFile(":/example/res/template/src/CMakeLists.txt.in",
+    templateToFile(":/test/res/template/src/CMakeLists.txt.in",
                    projectDir.filePath("src/CMakeLists.txt"), name);
-    templateToFile(":/example/res/template/src/main.cpp.in", projectDir.filePath("src/main.cpp"),
+    templateToFile(":/test/res/template/src/main.cpp.in", projectDir.filePath("src/main.cpp"),
                    name);
-    templateToFile(":/example/res/template/src/main.qml.in", projectDir.filePath("src/main.qml"),
+    templateToFile(":/test/res/template/src/main.qml.in", projectDir.filePath("src/main.qml"),
                    name);
-    templateToFile(":/example/res/template/src/en_US.ts.in",
+    templateToFile(":/test/res/template/src/en_US.ts.in",
                    projectDir.filePath("src/" + name + "_en_US.ts"), name);
-    templateToFile(":/example/res/template/src/zh_CN.ts.in",
+    templateToFile(":/test/res/template/src/zh_CN.ts.in",
                    projectDir.filePath("src/" + name + "_zh_CN.ts"), name);
-    copyFile(":/example/res/template/src/App.qml.in", projectDir.filePath("src/App.qml"));
-    copyFile(":/example/res/template/src/qml.qrc.in", projectDir.filePath("src/qml.qrc"));
-    copyFile(":/example/res/template/src/logo.ico.in", projectDir.filePath("src/logo.ico"));
-    copyFile(":/example/res/template/src/README.md.in", projectDir.filePath("src/README.md"));
+    //直接复制文件
+    copyFile(":/test/res/template/src/App.qml.in", projectDir.filePath("src/App.qml"));
+    copyFile(":/test/res/template/src/qml.qrc.in", projectDir.filePath("src/qml.qrc"));
+    copyFile(":/test/res/template/src/logo.ico.in", projectDir.filePath("src/logo.ico"));
+    copyFile(":/test/res/template/src/README.md.in", projectDir.filePath("src/README.md"));
     return this->success(projectPath + "/CMakeLists.txt");
 }

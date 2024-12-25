@@ -6,37 +6,45 @@ else()
     project(hccontrolsplugin VERSION 1.0)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/)
 #配置通用编译
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if (QT_VERSION VERSION_GREATER_EQUAL "6.3")
+    qt_standard_project_setup()
+else ()
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+    set(CMAKE_INCLUDE_CURRENT_DIR ON)
+    set(CMAKE_AUTOUIC ON)
+endif ()
+
+#设置版本号
+add_definitions(-DHCCONTROLS_VERSION=1,7,7,0)
 
 if (HCCONTROLS_BUILD_STATIC_LIB)
     add_definitions(-DHCCONTROLS_BUILD_STATIC_LIB)
 endif()
 
+#编译参数设置
+option(HCCONTROLS_BUILD_STATIC_LIB "Build static library." OFF)
+
 #导入Qt相关依赖包
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Quick Qml Svg)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Quick Qml Svg)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Quick Qml Widgets Svg)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Quick Qml Widgets Svg)
 
-if(QT_VERSION VERSION_GREATER_EQUAL "6.3")
-    qt_standard_project_setup()
-else()
-    set(CMAKE_AUTOMOC ON)
-    set(CMAKE_AUTORCC ON)
-    set(CMAKE_AUTOUIC ON)
-endif()
+set(QT_SDK_DIR "${Qt${QT_VERSION_MAJOR}_DIR}/../../..")
+cmake_path(SET QT_SDK_DIR NORMALIZE ${QT_SDK_DIR})
 
+#设置QML插件输出目录，可以通过外部设置，如果外部没有设置就默认到<QT_SDK_DIR_PATH>\qml\HcControls目录下
 set(HcControls_QML_PLUGIN_DIRECTORY "" CACHE PATH "Path to HcControls plugin")
 if (NOT HcControls_QML_PLUGIN_DIRECTORY)
     set(HcControls_QML_PLUGIN_DIRECTORY ${QT_SDK_DIR}/qml/HcControls)
 endif ()
 
 #国际化
-# find_program(QT_LUPDATE NAMES lupdate)
-# find_program(QT_LRELEASE NAMES lrelease)
 find_program(LUPDATE_EXECUTABLE lupdate)
 find_program(LRELEASE_EXECUTABLE lrelease)
-
 if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/hc_en_US.qm)
     execute_process(COMMAND ${QT_LUPDATE} ${CMAKE_CURRENT_LIST_DIR} -ts hc_en_US.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
     execute_process(COMMAND ${QT_LRELEASE} hc_en_US.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
@@ -45,17 +53,25 @@ if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/hc_zh_CN.qm)
     execute_process(COMMAND ${QT_LUPDATE} ${CMAKE_CURRENT_LIST_DIR} -ts hc_zh_CN.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
     execute_process(COMMAND ${QT_LRELEASE} hc_zh_CN.ts WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 endif ()
+
 file(GLOB QM_FILE_PATHS ${CMAKE_CURRENT_LIST_DIR}/ *.qm)
 file(COPY ${QM_FILE_PATHS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/Qt${QT_VERSION_MAJOR}/imports/HcControls/i18n")
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp)
 
 #遍历所有Cpp文件
-file(GLOB_RECURSE CPP_FILES *.cpp *.h)
+file(GLOB_RECURSE CPP_FILES *.cpp *.h *.cxx)
 foreach(filepath ${CPP_FILES})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" filename ${filepath})
     list(APPEND sources_files ${filename})
 endforeach(filepath)
+
+if (WIN32)
+    set(HCCONTROLS_VERSION_RC_PATH ${CMAKE_CURRENT_BINARY_DIR}/version_${PROJECT_NAME}.rc)
+    configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/version_dll.rc.in
+            ${HCCONTROLS_VERSION_RC_PATH}
+    )
+endif ()
 
 if(QT_VERSION VERSION_GREATER_EQUAL "6.2")
     #HcControlsplugin.HcControlsplugin.h，这些只要Qt5使用，Qt6不需要
@@ -67,29 +83,30 @@ if(QT_VERSION VERSION_GREATER_EQUAL "6.2")
     #遍历所有qml文件
     file(GLOB_RECURSE QML_PATHS *.qml qmldir)
     foreach(filepath ${QML_PATHS})
-        #if(${filepath} MATCHES "Qt${QT_VERSION_MAJOR}/")
+        if(${filepath} MATCHES "Qt${QT_VERSION_MAJOR}/")
             string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" filename ${filepath})
             if (${filename} MATCHES "qmldir")
                 list(APPEND resource_files ${filename})
+                message("Hello------------------- ${filename}")
             else ()
                 list(APPEND qml_files ${filename})
             endif()
-        #endif()
+        endif()
     endforeach(filepath)
 
     #遍历所有资源文件
     file(GLOB_RECURSE RES_PATHS *.png *.jpg *.svg *.ico *.ttf *.webp *.js *.qm)
     foreach(filepath ${RES_PATHS})
-        #if(${filepath} MATCHES "Qt${QT_VERSION_MAJOR}/")
+        if(${filepath} MATCHES "Qt${QT_VERSION_MAJOR}/")
             string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" filename ${filepath})
             list(APPEND resource_files ${filename})
-        #endif()
+        endif()
     endforeach(filepath)
 
     #修改资源文件导出路径
     foreach(filepath IN LISTS qml_files resource_files)
         string(REPLACE "Qt${QT_VERSION_MAJOR}/imports/HcControls/" "" filename ${filepath})
-        string(REPLACE "qml/" "" filename ${filepath})
+        # string(REPLACE "qml/" "" filename ${filepath})
         set_source_files_properties(${filepath} PROPERTIES QT_RESOURCE_ALIAS ${filename})
 
         string(REGEX MATCH "HcPcrHelper|Constants" RESULT ${filepath})

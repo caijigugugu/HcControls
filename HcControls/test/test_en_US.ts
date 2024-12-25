@@ -671,12 +671,12 @@ Some contents...</source>
         <translation>The creation path cannot be empty</translation>
     </message>
     <message>
-        <location filename="src/helper/InitializrHelper.cpp" line="79"/>
+        <location filename="src/helper/InitializrHelper.cpp" line="80"/>
         <source>The path does not exist</source>
         <translation>The path does not exist</translation>
     </message>
     <message>
-        <location filename="src/helper/InitializrHelper.cpp" line="85"/>
+        <location filename="src/helper/InitializrHelper.cpp" line="86"/>
         <source>%1 folder already exists</source>
         <translation>%1 folder already exists</translation>
     </message>

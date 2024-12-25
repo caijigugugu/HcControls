@@ -10,8 +10,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 17)
 
 #导入Qt相关依赖包
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Quick Svg)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Quick Svg)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Quick Svg Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Quick Svg Network)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -40,7 +40,6 @@ qt_add_qml_module(test
 add_dependencies(${PROJECT_NAME} Script-UpdateTranslations)
 
 #添加国际化脚本
-
 find_program(LUPDATE_EXECUTABLE lupdate)
 find_program(LRELEASE_EXECUTABLE lrelease)
 # find_program(QT_LUPDATE NAMES lupdate lupdate-qt6)
@@ -82,7 +81,7 @@ if (WIN32)
     file(COPY ${3RDPARTY_DLL_DIR} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif ()
 
-#复制FluentUI源码到运行目录下，用于脚手架生成
+#复制HcControls源码到运行目录下，用于脚手架生成
 file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/source/)
 file(COPY ${CMAKE_SOURCE_DIR}/HcControls/ DESTINATION ${APPLICATION_DIR_PATH}/source/)
 
